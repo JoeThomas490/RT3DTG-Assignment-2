@@ -14,6 +14,14 @@ HeightMap::HeightMap( char* filename, float gridSize, float heightRange )
 
 	m_HeightMapFaceCount = (m_HeightMapLength-1)*(m_HeightMapWidth-1)*2;
 
+	m_pFaceData = new FaceCollisionData[ m_HeightMapFaceCount ];
+
+	for (int f = 0; f < m_HeightMapFaceCount; ++f)
+	{
+		m_pFaceData[f].m_bDisabled = false;
+		m_pFaceData[f].m_bCollided = false;
+	}
+
 	m_HeightMapVtxCount = m_HeightMapFaceCount*3;
 		
 	for (size_t i = 0; i < NUM_TEXTURE_FILES; ++i)
@@ -26,6 +34,7 @@ HeightMap::HeightMap( char* filename, float gridSize, float heightRange )
 
 	m_pHeightMapBuffer = CreateDynamicVertexBuffer(Application::s_pApp->GetDevice(), sizeof Vertex_Pos3fColour4ubNormal3fTex2f * m_HeightMapVtxCount, 0 );
 	
+	BuildCollisionData();
 	RebuildVertexData();
 
 	for (size_t i = 0; i < NUM_TEXTURE_FILES; ++i)
@@ -36,6 +45,62 @@ HeightMap::HeightMap( char* filename, float gridSize, float heightRange )
 
 	ReloadShader(); // This compiles the shader
 }
+
+
+void HeightMap::BuildCollisionData(void)
+{
+	int mapIndex = 0;
+	int faceIndex = 0;
+
+	XMVECTOR v0, v1, v2, v3;
+	int i0, i1, i2, i3;
+
+	// This is the unstripped method, I wouldn't recommend changing this to the stripped method for the collision assignment
+	for (int l = 0; l < m_HeightMapLength; ++l)
+	{
+		for (int w = 0; w < m_HeightMapWidth; ++w)
+		{
+			if (w < m_HeightMapWidth - 1 && l < m_HeightMapLength - 1)
+			{
+				i0 = mapIndex;
+				i1 = mapIndex + m_HeightMapWidth;
+				i2 = mapIndex + 1;
+				i3 = mapIndex + m_HeightMapWidth + 1;
+
+				v0 = XMLoadFloat4(&m_pHeightMap[i0]);
+				v1 = XMLoadFloat4(&m_pHeightMap[i1]);
+				v2 = XMLoadFloat4(&m_pHeightMap[i2]);
+				v3 = XMLoadFloat4(&m_pHeightMap[i3]);
+
+				XMVECTOR vA = v0 - v1;
+				XMVECTOR vB = v1 - v2;
+				XMVECTOR vC = v3 - v1;
+
+				XMVECTOR vN1, vN2;
+				vN1 = XMVector3Cross(vA, vB);
+				vN1 = XMVector3Normalize(vN1);
+
+				vN2 = XMVector3Cross(vB, vC);
+				vN2 = XMVector3Normalize(vN2);
+
+				XMStoreFloat3(&m_pFaceData[faceIndex + 0].m_v0, v0);
+				XMStoreFloat3(&m_pFaceData[faceIndex + 0].m_v1, v1);
+				XMStoreFloat3(&m_pFaceData[faceIndex + 0].m_v2, v2);
+				XMStoreFloat3(&m_pFaceData[faceIndex + 0].m_vNormal, vN1);
+
+				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_v0, v2);
+				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_v1, v1);
+				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_v2, v3);
+				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_vNormal, vN2);
+
+				faceIndex += 2;
+			}
+
+			mapIndex++;
+		}
+	}
+}
+
 
 
 void HeightMap::RebuildVertexData( void )
@@ -49,74 +114,93 @@ void HeightMap::RebuildVertexData( void )
 		int vtxIndex = 0;
 		int mapIndex = 0;
 
-		XMVECTOR v0, v1, v2, v3;
+		XMVECTOR v0, v1, v2, v3, v4, v5;
 		float tX0, tY0, tX1, tY1, tX2, tY2, tX3, tY3;
-		int i0, i1, i2, i3;
 
 		VertexColour c0, c1, c2, c3;
+		XMVECTOR vN1, vN2;
 
 		static VertexColour STANDARD_COLOUR(255, 255, 255, 255);
 		static VertexColour COLLISION_COLOUR(255, 0, 0, 255);
 
+		VertexColour CUBE_COLOUR;
+
 		// This is the unstripped method, I wouldn't recommend changing this to the stripped method for the collision assignment
-		for( int l = 0; l < m_HeightMapLength; ++l )
+		for( int f = 0; f < m_HeightMapFaceCount; f+=2 )
 		{
-			for( int w = 0; w < m_HeightMapWidth; ++w )
-			{	
-				if( w < m_HeightMapWidth-1 && l < m_HeightMapLength-1 )
-				{
-					i0 = mapIndex;
-					i1 = mapIndex + m_HeightMapWidth;
-					i2 = mapIndex + 1;
-					i3 = mapIndex + m_HeightMapWidth + 1;
+			v0 = XMLoadFloat3(&m_pFaceData[f + 0].m_v0);
+			v1 = XMLoadFloat3(&m_pFaceData[f + 0].m_v1);
+			v2 = XMLoadFloat3(&m_pFaceData[f + 0].m_v2);
+			v3 = XMLoadFloat3(&m_pFaceData[f + 1].m_v0);
+			v4 = XMLoadFloat3(&m_pFaceData[f + 1].m_v1);
+			v5 = XMLoadFloat3(&m_pFaceData[f + 1].m_v2);
 
-					v0 = XMLoadFloat4(&m_pHeightMap[i0]);
-					v1 = XMLoadFloat4(&m_pHeightMap[i1]);
-					v2 = XMLoadFloat4(&m_pHeightMap[i2]);
-					v3 = XMLoadFloat4(&m_pHeightMap[i3]);
+			if (m_pFaceData[f + 0].m_bDisabled)
+				v0 = v1 = v2 = XMVectorZero();
 
-					XMVECTOR vA = v0 - v1;
-					XMVECTOR vB = v1 - v2;
-					XMVECTOR vC = v3 - v1;
-			
-					XMVECTOR vN1, vN2;
-					vN1 = XMVector3Cross(vA, vB);
-					vN1 = XMVector3Normalize(vN1);
+			if (m_pFaceData[f + 1].m_bDisabled)
+				v3 = v4 = v5 = XMVectorZero();
 
-					vN2 = XMVector3Cross(vB, vC);
-					vN2 = XMVector3Normalize(vN2);
+			vN1 = XMLoadFloat3(&m_pFaceData[f + 0].m_vNormal);
+			vN2 = XMLoadFloat3(&m_pFaceData[f + 1].m_vNormal);
 
-					VertexColour CUBE_COLOUR;
+			tX0 = 0.0f;
+			tY0 = 0.0f;
+			tX1 = 0.0f;
+			tY1 = 1.0f;
+			tX2 = 1.0f;
+			tY2 = 0.0f;
+			tX3 = 1.0f;
+			tY3 = 1.0f;
 
-					tX0 = 0.0f;
-					tY0 = 0.0f;
-					tX1 = 0.0f;
-					tY1 = 1.0f;
-					tX2 = 1.0f;
-					tY2 = 0.0f;
-					tX3 = 1.0f;
-					tY3 = 1.0f;
-
-					// We use w for collision flag
-					c0 = (m_pHeightMap[i0].w&&m_pHeightMap[i1].w&&m_pHeightMap[i2].w)?COLLISION_COLOUR:STANDARD_COLOUR;
-					c1 = (m_pHeightMap[i2].w&&m_pHeightMap[i1].w&&m_pHeightMap[i3].w)?COLLISION_COLOUR:STANDARD_COLOUR;
+			c0 = m_pFaceData[f + 0].m_bCollided ? COLLISION_COLOUR : STANDARD_COLOUR;
+			c1 = m_pFaceData[f + 1].m_bCollided ? COLLISION_COLOUR : STANDARD_COLOUR;
 					 
-					pMapVtxs[vtxIndex + 0] = Vertex_Pos3fColour4ubNormal3fTex2f(v0, c0, vN1, XMFLOAT2(tX0, tY0));
-					pMapVtxs[vtxIndex + 1] = Vertex_Pos3fColour4ubNormal3fTex2f(v1, c0, vN1, XMFLOAT2(tX1, tY1));
-					pMapVtxs[vtxIndex + 2] = Vertex_Pos3fColour4ubNormal3fTex2f(v2, c0, vN1, XMFLOAT2(tX2, tY2));
-					pMapVtxs[vtxIndex + 3] = Vertex_Pos3fColour4ubNormal3fTex2f(v2, c1, vN2, XMFLOAT2(tX2, tY2));
-					pMapVtxs[vtxIndex + 4] = Vertex_Pos3fColour4ubNormal3fTex2f(v1, c1, vN2, XMFLOAT2(tX1, tY1));
-					pMapVtxs[vtxIndex + 5] = Vertex_Pos3fColour4ubNormal3fTex2f(v3, c1, vN2, XMFLOAT2(tX3, tY3));
+			pMapVtxs[vtxIndex + 0] = Vertex_Pos3fColour4ubNormal3fTex2f(v0, c0, vN1, XMFLOAT2(tX0, tY0));
+			pMapVtxs[vtxIndex + 1] = Vertex_Pos3fColour4ubNormal3fTex2f(v1, c0, vN1, XMFLOAT2(tX1, tY1));
+			pMapVtxs[vtxIndex + 2] = Vertex_Pos3fColour4ubNormal3fTex2f(v2, c0, vN1, XMFLOAT2(tX2, tY2));
+			pMapVtxs[vtxIndex + 3] = Vertex_Pos3fColour4ubNormal3fTex2f(v3, c1, vN2, XMFLOAT2(tX2, tY2));
+			pMapVtxs[vtxIndex + 4] = Vertex_Pos3fColour4ubNormal3fTex2f(v4, c1, vN2, XMFLOAT2(tX1, tY1));
+			pMapVtxs[vtxIndex + 5] = Vertex_Pos3fColour4ubNormal3fTex2f(v5, c1, vN2, XMFLOAT2(tX3, tY3));
 
-					vtxIndex += 6;
-				}
-				mapIndex++;
-
-			}
+			vtxIndex += 6;
 		}
 	}
 
 	Application::s_pApp->GetDeviceContext()->Unmap(m_pHeightMapBuffer, 0);
+}
+
+
+int HeightMap::DisableBelowLevel( float fYLevel )
+{
+	int nHidden = 0;
+
+	for (int f = 0; f < m_HeightMapFaceCount; ++f)
+	{
+		if (m_pFaceData[f].m_v0.y < fYLevel && m_pFaceData[f].m_v1.y < fYLevel && m_pFaceData[f].m_v2.y < fYLevel)
+		{
+			m_pFaceData[f].m_bDisabled = true;
+			nHidden++;
+		}
+	}
+
+	return nHidden;
+}
+
+int HeightMap::EnableAll( void )
+{
+	int nHidden = 0;
+
+	for (int f = 0; f < m_HeightMapFaceCount; ++f)
+	{
+		if (m_pFaceData[f].m_bDisabled == true)
+		{
+			m_pFaceData[f].m_bDisabled = false;
+			nHidden++;
+		}
+	}
+
+	return nHidden;
 }
 
 
@@ -434,47 +518,17 @@ bool HeightMap::RayCollision(XMVECTOR& rayPos, XMVECTOR rayDir, float raySpeed, 
 	float colDist = 0.0f;
 
 	// This resets the collision colouring
-	for( int l = 0; l < m_HeightMapLength-1; ++l )
-	{
-		for( int w = 0; w < m_HeightMapWidth-1; ++w )
-		{
-			int mapIndex = (l*m_HeightMapWidth)+w;
-
-			i0 = mapIndex;
-			i1 = mapIndex+m_HeightMapWidth;
-			i2 = mapIndex+1;
-			i3 = mapIndex+m_HeightMapWidth+1;
-
-			m_pHeightMap[i0].w = 0;
-			m_pHeightMap[i1].w = 0;
-			m_pHeightMap[i2].w = 0;
-			m_pHeightMap[i3].w = 0;
-		}
-	}
+	for( int f = 0; f < m_HeightMapFaceCount; ++f )
+		m_pFaceData[f].m_bCollided = false;
 
 #ifdef COLOURTEST
 	// This is just a piece of test code for the map colouring
 	static float frame = 0;
 
-	for( int l = 0; l < m_HeightMapLength-1; ++l )
-	{
-		for( int w = 0; w < m_HeightMapWidth-1; ++w )
-		{
-			int mapIndex = (l*m_HeightMapWidth)+w;
-
-			i0 = mapIndex;
-			i1 = mapIndex+m_HeightMapWidth;
-			i2 = mapIndex+1;
-			i3 = mapIndex+m_HeightMapWidth+1;
-
-			if( (int)frame%(m_HeightMapLength*m_HeightMapWidth) == mapIndex )
-			{
-				m_pHeightMap[i0].w = 1;
-				m_pHeightMap[i1].w = 1;
-				m_pHeightMap[i2].w = 1;
-				m_pHeightMap[i3].w = 1;
-			}
-		}
+	for( int f = 0; f < m_HeightMapFaceCount; ++f )
+	{	
+		if( (int)frame%m_HeightMapFaceCount == f )
+			m_pFaceData[f].m_bCollided = true;
 	}
 
 	RebuildVertexData();
@@ -484,135 +538,21 @@ bool HeightMap::RayCollision(XMVECTOR& rayPos, XMVECTOR rayDir, float raySpeed, 
 	// end of test code
 #endif
 	
-#ifdef MAPTEST
-	// This is just a piece of test code for the map colouring
-	static float frame = 0;
-
-	for (int l = 0; l < m_HeightMapLength - 1; ++l)
-	{
-		for (int w = 0; w < m_HeightMapWidth - 1; ++w)
-		{
-			int mapIndex = (l*m_HeightMapWidth) + w;
-
-			i0 = mapIndex;
-			i1 = mapIndex + m_HeightMapWidth;
-			i2 = mapIndex + 1;
-			i3 = mapIndex + m_HeightMapWidth + 1;
-
-			if ((int)frame % (m_HeightMapLength*m_HeightMapWidth) == mapIndex)
-			{
-				m_pHeightMap[i0].w = 1;
-				m_pHeightMap[i1].w = 1;
-				m_pHeightMap[i2].w = 1;
-				m_pHeightMap[i3].w = 1;
-			}
-		}
-	}
-
-	RebuildVertexData();
-
-	frame += 0.1f;
-
-	// end of test code
-#endif
-
-#ifdef TRITEST
-	// This is a piece of test code to make sure that the right triangle is being checked
-
-	int row = ((rayPos.z+14)/2)+0.5f;
-	int col = ((rayPos.x+14)/2)+0.5f;
-
-	int mapIndex = (row*m_HeightMapWidth)+col;
-	int predictMapIndex = mapIndex;
-
-	i0 = mapIndex;
-	i1 = mapIndex+m_HeightMapWidth;
-	i2 = mapIndex+1;
-	i3 = mapIndex+m_HeightMapWidth+1;
-
-	if( 2.0-fmod( rayPos.z+16, 2.0f ) < fmod( rayPos.x+16, 2.0f ) )
-	{
-			m_pHeightMap[i0].w = 1;
-			m_pHeightMap[i1].w = 1;
-			m_pHeightMap[i2].w = 1;
-	}
-	else
-	{
-			m_pHeightMap[i2].w = 1;
-			m_pHeightMap[i1].w = 1;
-			m_pHeightMap[i3].w = 1;
-	}
-
-	RebuildVertexData();
-	
-#endif
 
 	// This is a brute force solution that checks against every triangle in the heightmap
-	for( int l = 0; l < m_HeightMapLength-1; ++l )
-	{
-		for( int w = 0; w < m_HeightMapWidth-1; ++w )
-		{	
-			int mapIndex = (l*m_HeightMapWidth)+w;
-
-			i0 = mapIndex;
-			i1 = mapIndex+m_HeightMapWidth;
-			i2 = mapIndex+1;
-			i3 = mapIndex+m_HeightMapWidth+1;
-
-			v0 = XMLoadFloat4(&m_pHeightMap[i0]);
-			v1 = XMLoadFloat4(&m_pHeightMap[i1]);
-			v2 = XMLoadFloat4(&m_pHeightMap[i2]);
-			v3 = XMLoadFloat4(&m_pHeightMap[i3]);
-			
-			//bool bOverQuad = PointOverQuad(rayPos, v0, v1, v2);
-
-			//if (mapIndex == g_badIndex)
-			//	bOverQuad = bOverQuad;
-
-			//012 213
-			if( RayTriangle( v0, v1, v2, rayPos, rayDir, colPos, colNormN, colDist ) )
+	for( int f = 0; f < m_HeightMapFaceCount; ++f )
+	{		
+		//012 213
+		if (!m_pFaceData[f].m_bDisabled && RayTriangle(f, rayPos, rayDir, colPos, colNormN, colDist))
+		{
+			// Needs to be >=0 
+			if( colDist <= raySpeed && colDist >= 0.0f )
 			{
-				// Needs to be >=0 
-				if( colDist <= raySpeed && colDist >= 0.0f )
-				{
-					m_pHeightMap[i0].w = 1;
-					m_pHeightMap[i1].w = 1;
-					m_pHeightMap[i2].w = 1;
-					RebuildVertexData();
-
-					return true;
-				}
-	
-			}
-			// 213
-			if( RayTriangle(v2, v1, v3, rayPos, rayDir, colPos, colNormN, colDist ) )
-			{
-				// Needs to be >=0 
-				if( colDist <= raySpeed && colDist >= 0.0f )
-				{
-					m_pHeightMap[i2].w = 1;
-					m_pHeightMap[i1].w = 1;
-					m_pHeightMap[i3].w = 1;
-					RebuildVertexData();
-
-					return true;
-				}
-			}
-
-			/*
-			if (bOverQuad)
-			{
-				m_pHeightMap[i0].w = 1;
-				m_pHeightMap[i2].w = 1;
-				m_pHeightMap[i1].w = 1;
-				m_pHeightMap[i3].w = 1;
+				m_pFaceData[f].m_bCollided = true;
 				RebuildVertexData();
-				g_badIndex = mapIndex;
+				return true;
 			}
-			*/
-
 		}
-	
 	}
 
 	return false;
@@ -633,7 +573,7 @@ bool HeightMap::RayCollision(XMVECTOR& rayPos, XMVECTOR rayDir, float raySpeed, 
 // Returns: 	true if the intersection point lies within the bounds of the triangle.
 // Notes: 		Not for the faint-hearted :)
 
-bool HeightMap::RayTriangle(const XMVECTOR& vert0, const XMVECTOR& vert1, const XMVECTOR& vert2, const XMVECTOR& rayPos, const XMVECTOR& rayDir, XMVECTOR& colPos, XMVECTOR& colNormN, float& colDist)
+bool HeightMap::RayTriangle( int nFaceIndex, const XMVECTOR& rayPos, const XMVECTOR& rayDir, XMVECTOR& colPos, XMVECTOR& colNormN, float& colDist)
  {
 	 // Part 1: Calculate the collision point between the ray and the plane on which the triangle lies
 	 //
@@ -661,10 +601,22 @@ bool HeightMap::RayTriangle(const XMVECTOR& vert0, const XMVECTOR& vert1, const 
 
 	 // Remember to remove it once you have implemented part 2 below...
 
-	 XMVECTOR norm = XMVector3Cross(vert0, vert1);
+	 XMVECTOR vert0, vert1, vert2;
+	 
+
+	 vert0 = XMLoadFloat3(&m_pFaceData[nFaceIndex].m_v0);
+	 vert1 = XMLoadFloat3(&m_pFaceData[nFaceIndex].m_v1);
+	 vert2 = XMLoadFloat3(&m_pFaceData[nFaceIndex].m_v2);
+
+
+
+	 XMVECTOR norm = XMVector3Cross(vert2 - vert0, vert2 - vert1);
 	 colNormN = XMVector3Normalize(norm);
 
-	 if (fabs(colNormN.m128_f32[1])>0.99f) return false;
+	 //if (fabs(colNormN.m128_f32[1]) > 0.99f)
+	 //{
+	 // return false;
+	 //}
 
 	 // Step 2: Use |COLNORM| and any vertex on the triangle to calculate D
 	 // D =  |N|.V1
@@ -674,7 +626,8 @@ bool HeightMap::RayTriangle(const XMVECTOR& vert0, const XMVECTOR& vert1, const 
 
 
 	 // Step 3: Calculate the demoninator of the COLDIST equation: (|COLNORM| dot |RAYDIR|) and "early out" (return false) if it is 0
-	 XMVECTOR denom = XMVector3Dot(colNormN, rayDir);
+	 XMVECTOR rDir = XMVector3Normalize(rayDir);
+	 XMVECTOR denom = XMVector3Dot(colNormN, rDir);
 
 	 if (denom.m128_f32[0] == 0)
 	 {
@@ -690,20 +643,20 @@ bool HeightMap::RayTriangle(const XMVECTOR& vert0, const XMVECTOR& vert1, const 
 
 	 XMVECTOR coldist = numer / denom;
 
-	 if (coldist.m128_f32[0] < rayDir.m128_f32[0])
+	 if (coldist.m128_f32[0] < 0)
 		 return false;
 
 	 XMStoreFloat(&colDist, coldist);
 
 	 // Step 6: Use COLDIST to calculate COLPOS
 
-	 colPos = rayPos + (coldist * rayDir);
+	 colPos = rayPos + (coldist * rDir);
 
 	 XMFLOAT3 Pc;
 	 XMStoreFloat3(&Pc, colPos);
 
 	 // Next two lines are useful debug code to stop collision with anywhere beneath the pyramid. 
-	 if (min(vert0.m128_f32[1], vert1.m128_f32[1], vert2.m128_f32[1])>colPos.m128_f32[1]) return false;
+	 //if (min(vert0.m128_f32[1], vert1.m128_f32[1], vert2.m128_f32[1])>colPos.m128_f32[1]) return false;
 	 // Remember to remove it once you have implemented part 2 below...
 
 	 // Part 2: Work out if the intersection point falls within the triangle
@@ -711,45 +664,33 @@ bool HeightMap::RayTriangle(const XMVECTOR& vert0, const XMVECTOR& vert1, const 
 	 // If the point is inside the triangle then it will be contained by the three new planes defined by:
 	 //if(|N|.Pc + D < 0) return false;
 	 // 1) RAYPOS, VERT0, VERT1
-	
-
 	 // 2) RAYPOS, VERT1, VERT2
-
-
 	 // 3) RAYPOS, VERT2, VERT0
 	 // Move the ray backwards by a tiny bit (one unit) in case the ray is already on the plane
 
-	 // ...
+	 XMVECTOR adjustedPos = colPos - (rayDir * 2);
 
 	 // Step 1: Test against plane 1 and return false if behind plane
 
-	 //XMVECTOR n1 = XMVector3Cross(vert0, vert1);
-	 //XMVECTOR d1 = XMVector3Dot(n1, vert1);
-	 //XMVECTOR r1 = XMVector3Dot(n1, colPos) + d1;
-	 //if (r1.m128_f32[0] < 0)
-	 //{
-		// return false;
-	 //}
 
-	 //// Step 2: Test against plane 2 and return false if behind plane
+	 if (!PointPlane(rayPos, vert0, vert1, adjustedPos))
+	 {
+		 return false;
+	 }
 
-	 //XMVECTOR n2 = XMVector3Cross(vert1, vert2);
-	 //XMVECTOR d2 = XMVector3Dot(n2, vert2);
-	 //XMVECTOR r2 = XMVector3Dot(n2, colPos) + d2;
-	 //if (r2.m128_f32[0] < 0)
-	 //{
-		// return false;
-	 //}
+	 // Step 2: Test against plane 2 and return false if behind plane
+
+	 if (!PointPlane(rayPos, vert1, vert2, adjustedPos))
+	 {
+		 return false;
+	 }
 
 	 //// Step 3: Test against plane 3 and return false if behind plane
+	 if (!PointPlane(rayPos, vert2, vert0, adjustedPos))
+	 {
+		 return false;
+	 }
 
-	 //XMVECTOR n3 = XMVector3Cross(vert2, vert0);
-	 //XMVECTOR d3 = XMVector3Dot(n3, vert0);
-	 //XMVECTOR r3 = XMVector3Dot(n3, colPos) + d3;
-	 //if (r3.m128_f32[0] < 0)
-	 //{
-		// return false;
-	 //}
 	 // Step 4: Return true! (on triangle)
 	 return true;
  }
@@ -772,23 +713,31 @@ bool HeightMap::PointPlane(const XMVECTOR& vert0, const XMVECTOR& vert1, const X
 	 // but D = -(|PNORM| dot VERT0 )
 	 // --> (|PNORM| dot POINTPOS) - (|PNORM| dot VERT0) < 0
 	 XMVECTOR sVec0, sVec1, sNormN;
+
 	 float sD, sNumer;
 
 	 // Step 1: Calculate PNORM
 
-	 // ...
-	
+	 XMVECTOR pNorm = XMVector3Cross(vert1 - vert0, vert2 - vert0);
+	 pNorm = XMVector3Normalize(pNorm);
+
+	 //XMStoreFloat(&sNormN, pNorm);
 	 // Step 2: Calculate D
 
-	 // ...
-	 
+	 XMVECTOR D = XMVector3Dot(pNorm, vert0) * -1;
+	 XMStoreFloat(&sD, D);
+
 	 // Step 3: Calculate full equation
 
-	 // ...
+	 XMVECTOR numer = XMVector3Dot(pNorm, pointPos);
+	 XMStoreFloat(&sNumer, numer);
 
 	 // Step 4: Return false if < 0 (behind plane)
 
-	 // ...
+	 if (sNumer + sD < 0)
+	 {
+		 return false;
+	 }
 
 	 // Step 5: Return true! (in front of plane)
 	 return true;
