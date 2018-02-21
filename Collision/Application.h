@@ -51,6 +51,8 @@ private:
 	float m_cameraZ;
 	bool m_bWireframe;
 
+	bool m_bDebugMode;
+
 	int m_cameraState;
 
 	HeightMap* m_pHeightMap;

@@ -19,7 +19,7 @@ bool Application::HandleStart()
 	m_frameCount = 0.0f;
 
 	m_bWireframe = true;
-	m_pHeightMap = new HeightMap( "Resources/heightmap.bmp", 2.0f, 0.75f );
+	m_pHeightMap = new HeightMap("Resources/heightmap.bmp", 2.0f, 0.75f);
 
 	Sphere::LoadResources();
 
@@ -28,6 +28,8 @@ bool Application::HandleStart()
 
 	m_pSphere2 = new Sphere();
 	m_pSphere2->SetHeightmapPtr(m_pHeightMap);
+
+	m_bDebugMode = false;
 
 	//m_pSphereMesh = CommonMesh::NewSphereMesh(this, 1.0f, 16, 16);
 	//mSpherePos = XMFLOAT3( -14.0, 20.0f, -14.0f );
@@ -44,7 +46,7 @@ bool Application::HandleStart()
 	if (!this->CommonApp::HandleStart())
 		return false;
 
-	this->SetRasterizerState( false, m_bWireframe );
+	this->SetRasterizerState(false, m_bWireframe);
 
 	m_cameraState = CAMERA_ROTATE;
 
@@ -86,7 +88,7 @@ void Application::HandleStop()
 
 void Application::ReloadShaders()
 {
-	if( m_pHeightMap->ReloadShader() == false )
+	if (m_pHeightMap->ReloadShader() == false)
 		this->SetWindowTitle("Reload Failed - see Visual Studio output window. Press F5 to try again.");
 	else
 		this->SetWindowTitle("Collision: Zoom / Rotate Q, A / O, P, Camera C, Drop Sphere R, N and T, Wire W");
@@ -94,8 +96,24 @@ void Application::ReloadShaders()
 
 void Application::HandleUpdate()
 {
-	m_pSphere->Update();
-	m_pSphere2->Update();
+	HandleCameraInput();
+	HandleDebugInput();
+	HandleSphereInput();
+
+
+	if(!m_bDebugMode)
+	{
+		m_pSphere->Update();
+		m_pSphere2->Update();
+	}
+	else
+	{
+		if ((int)m_frameCount % 30 == 0)
+		{
+			m_pSphere->Update();
+			m_pSphere2->Update();
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -107,20 +125,20 @@ void Application::HandleRender()
 	XMVECTOR vUpVector = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMMATRIX matProj, matView;
 
-	switch( m_cameraState )
+	switch (m_cameraState)
 	{
-		case CAMERA_TOP:
-			vCamera = XMVectorSet(0.0f, 100.0f, 0.1f, 0.0f);
-			vLookat = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-			matView = XMMatrixLookAtLH(vCamera, vLookat, vUpVector);
-			matProj = XMMatrixOrthographicLH(64, 36, 1.5f, 5000.0f);
-			break;
-		case CAMERA_ROTATE:
-			vCamera = XMVectorSet(sin(m_rotationAngle)*m_cameraZ, (m_cameraZ*m_cameraZ) / 50, cos(m_rotationAngle)*m_cameraZ, 0.0f);
-			vLookat = XMVectorSet(0.0f, 10.0f, 0.0f, 0.0f);
-			matView = XMMatrixLookAtLH(vCamera, vLookat, vUpVector);
-			matProj = XMMatrixPerspectiveFovLH(float(D3DX_PI / 7), 2, 1.5f, 5000.0f);
-			break;
+	case CAMERA_TOP:
+		vCamera = XMVectorSet(0.0f, 100.0f, 0.1f, 0.0f);
+		vLookat = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+		matView = XMMatrixLookAtLH(vCamera, vLookat, vUpVector);
+		matProj = XMMatrixOrthographicLH(64, 36, 1.5f, 5000.0f);
+		break;
+	case CAMERA_ROTATE:
+		vCamera = XMVectorSet(sin(m_rotationAngle)*m_cameraZ, (m_cameraZ*m_cameraZ) / 50, cos(m_rotationAngle)*m_cameraZ, 0.0f);
+		vLookat = XMVectorSet(0.0f, 10.0f, 0.0f, 0.0f);
+		matView = XMMatrixLookAtLH(vCamera, vLookat, vUpVector);
+		matProj = XMMatrixPerspectiveFovLH(float(D3DX_PI / 7), 2, 1.5f, 5000.0f);
+		break;
 	}
 
 	this->EnableDirectionalLight(1, XMFLOAT3(-1.f, -1.f, -1.f), XMFLOAT3(0.55f, 0.55f, 0.65f));
@@ -135,11 +153,11 @@ void Application::HandleRender()
 
 	worldMtx = XMMatrixTranslation(mSpherePos.x, mSpherePos.y, mSpherePos.z);
 
-	SetDepthStencilState( false, true );
-	m_pHeightMap->Draw( m_frameCount );
+	SetDepthStencilState(false, true);
+	m_pHeightMap->Draw(m_frameCount);
 
 	this->SetWorldMatrix(worldMtx);
-	SetDepthStencilState( true, true );
+	SetDepthStencilState(true, true);
 
 	m_pSphere->Draw();
 	m_pSphere2->Draw();
@@ -212,6 +230,17 @@ void Application::HandleDebugInput()
 	}
 	else
 		m_reload = false;
+
+
+
+	if (this->IsKeyPressed(32))
+	{
+		m_bDebugMode = true;
+	}
+	else
+	{
+		m_bDebugMode = false;
+	}
 }
 
 void Application::HandleSphereInput()
@@ -301,7 +330,7 @@ void Application::HandleSphereInput()
 
 
 
-int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int)
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	Application application;
 
