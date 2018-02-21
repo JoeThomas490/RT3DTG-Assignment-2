@@ -101,6 +101,16 @@ void HeightMap::BuildCollisionData(void)
 	}
 }
 
+XMFLOAT3 HeightMap::GetFaceNormal(int faceIndex, int offset)
+{
+	return XMFLOAT3();
+}
+
+XMFLOAT3 HeightMap::GetAveragedVertexNormal(int index, int row)
+{
+	return XMFLOAT3();
+}
+
 
 
 void HeightMap::RebuildVertexData( void )

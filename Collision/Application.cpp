@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "HeightMap.h"
+#include "Sphere.h"
 
 Application* Application::s_pApp = NULL;
 
@@ -20,10 +21,18 @@ bool Application::HandleStart()
 	m_bWireframe = true;
 	m_pHeightMap = new HeightMap( "Resources/heightmap.bmp", 2.0f, 0.75f );
 
-	m_pSphereMesh = CommonMesh::NewSphereMesh(this, 1.0f, 16, 16);
-	mSpherePos = XMFLOAT3( -14.0, 20.0f, -14.0f );
-	mSphereVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	mGravityAcc = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	Sphere::LoadResources();
+
+	m_pSphere = new Sphere();
+	m_pSphere->SetHeightmapPtr(m_pHeightMap);
+
+	m_pSphere2 = new Sphere();
+	m_pSphere2->SetHeightmapPtr(m_pHeightMap);
+
+	//m_pSphereMesh = CommonMesh::NewSphereMesh(this, 1.0f, 16, 16);
+	//mSpherePos = XMFLOAT3( -14.0, 20.0f, -14.0f );
+	//mSphereVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	//mGravityAcc = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	m_cameraZ = 50.0f;
 	m_rotationAngle = 0.f;
@@ -39,7 +48,7 @@ bool Application::HandleStart()
 
 	m_cameraState = CAMERA_ROTATE;
 
-	mSphereCollided = false;
+	//mSphereCollided = false;
 
 
 
@@ -53,8 +62,19 @@ void Application::HandleStop()
 {
 	delete m_pHeightMap;
 
-	if( m_pSphereMesh )
-		delete m_pSphereMesh;
+	if (m_pSphere != nullptr)
+	{
+		delete m_pSphere;
+		m_pSphere = nullptr;
+	}
+
+	if (m_pSphere2 != nullptr)
+	{
+		delete m_pSphere2;
+		m_pSphere2 = nullptr;
+	}
+
+	Sphere::DeleteResources();
 
 	this->CommonApp::HandleStop();
 }
@@ -142,10 +162,16 @@ void Application::HandleUpdate()
 		{
 			static int dx = 0;
 			static int dy = 0;
-			mSpherePos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
-			mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-			mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
-			mSphereCollided = false;
+			XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
+			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
+
+			m_pSphere->Reset(newPos, newVel, newAccel);
+
+			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
+			
+			m_pSphere2->Reset(newPos, newVel, newAccel);
+
 			dbR = true;
 		}
 	}
@@ -208,32 +234,8 @@ void Application::HandleUpdate()
 		dbN = false;
 	}
 
-	// Update Sphere
-	XMVECTOR vSColPos, vSColNorm;
-	
-	if( !mSphereCollided )
-	{
-		XMVECTOR vSPos = XMLoadFloat3(&mSpherePos);
-		XMVECTOR vSVel = XMLoadFloat3(&mSphereVel);
-		XMVECTOR vSAcc = XMLoadFloat3(&mGravityAcc);
-
-		vSPos += vSVel; // Really important that we add LAST FRAME'S velocity as this was how fast the collision is expecting the ball to move
-		vSVel += vSAcc; // The new velocity gets passed through to the collision so it can base its predictions on our speed NEXT FRAME
-		
-
-		XMStoreFloat3(&mSphereVel, vSVel);
-		XMStoreFloat3(&mSpherePos, vSPos);
-	
-		mSphereSpeed = XMVectorGetX(XMVector3Length(vSVel));
-
-		mSphereCollided = m_pHeightMap->RayCollision(vSPos, vSVel, mSphereSpeed, vSColPos, vSColNorm);
-
-		if( mSphereCollided )
-		{
-			mSphereVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			XMStoreFloat3(&mSpherePos, vSColPos);
-		}
-	}
+	m_pSphere->Update();
+	m_pSphere2->Update();
 
 }
 
@@ -273,19 +275,15 @@ void Application::HandleRender()
 	XMMATRIX worldMtx;
 
 	worldMtx = XMMatrixTranslation(mSpherePos.x, mSpherePos.y, mSpherePos.z);
-	
-	this->SetWorldMatrix(worldMtx);
-	SetDepthStencilState( false, false );
-	if( m_pSphereMesh )
-		m_pSphereMesh->Draw();
 
 	SetDepthStencilState( false, true );
 	m_pHeightMap->Draw( m_frameCount );
 
 	this->SetWorldMatrix(worldMtx);
 	SetDepthStencilState( true, true );
-	if( m_pSphereMesh )
-		m_pSphereMesh->Draw();
+
+	m_pSphere->Draw();
+	m_pSphere2->Draw();
 
 	m_frameCount++;
 }

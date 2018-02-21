@@ -13,6 +13,7 @@
 #include "CommonMesh.h"
 
 class HeightMap;
+class Sphere;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -49,6 +50,9 @@ private:
 	int m_cameraState;
 
 	HeightMap* m_pHeightMap;
+
+	Sphere* m_pSphere;
+	Sphere* m_pSphere2;
 
 	CommonMesh *m_pSphereMesh;
 	XMFLOAT3 mSpherePos;
