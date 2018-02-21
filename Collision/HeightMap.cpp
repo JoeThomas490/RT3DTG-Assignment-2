@@ -88,10 +88,16 @@ void HeightMap::BuildCollisionData(void)
 				XMStoreFloat3(&m_pFaceData[faceIndex + 0].m_v2, v2);
 				XMStoreFloat3(&m_pFaceData[faceIndex + 0].m_vNormal, vN1);
 
+				XMVECTOR centre = (v0 + v1 + v2) / 3;
+				XMStoreFloat3(&m_pFaceData[faceIndex].m_vCentre, centre);
+
 				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_v0, v2);
 				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_v1, v1);
 				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_v2, v3);
 				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_vNormal, vN2);
+
+				centre = (v2 + v1 + v3) / 3;
+				XMStoreFloat3(&m_pFaceData[faceIndex + 1].m_vCentre, centre);
 
 				faceIndex += 2;
 			}
@@ -99,6 +105,8 @@ void HeightMap::BuildCollisionData(void)
 			mapIndex++;
 		}
 	}
+
+	m_iFaceCount = faceIndex;
 }
 
 XMFLOAT3 HeightMap::GetFaceNormal(int faceIndex, int offset)
@@ -211,6 +219,29 @@ int HeightMap::EnableAll( void )
 	}
 
 	return nHidden;
+}
+
+XMFLOAT3 HeightMap::GetPositionOnFace(int faceIndex, int vertIndex)
+{
+	FaceCollisionData colData = m_pFaceData[faceIndex];
+	XMFLOAT3 returnPos = XMFLOAT3 (0,0,0);
+	switch (vertIndex)
+	{
+	case 0:
+		returnPos = colData.m_vCentre;
+		break;
+	case 1:
+		returnPos = colData.m_v0;
+		break;
+	case 2:
+		returnPos = colData.m_v1;
+		break;
+	case 3:
+		returnPos = colData.m_v2;
+		break;
+	}
+
+	return returnPos;
 }
 
 

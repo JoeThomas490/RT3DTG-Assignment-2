@@ -33,6 +33,12 @@ public:
 	int DisableBelowLevel(float fY);
 	int EnableAll(void);
 
+	XMFLOAT3 GetPositionOnFace(int faceIndex, int vertIndex);
+
+public :
+
+	int m_iFaceCount;
+
 private:
 
 	struct FaceCollisionData
@@ -40,6 +46,7 @@ private:
 		XMFLOAT3 m_v0;
 		XMFLOAT3 m_v1;
 		XMFLOAT3 m_v2;
+		XMFLOAT3 m_vCentre;
 		XMFLOAT3 m_vNormal;
 		bool m_bCollided; // Debug colouring
 		bool m_bDisabled;

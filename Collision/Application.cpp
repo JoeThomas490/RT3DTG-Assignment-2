@@ -8,6 +8,8 @@ const int CAMERA_TOP = 0;
 const int CAMERA_ROTATE = 1;
 const int CAMERA_MAX = 2;
 
+const int DEBUG_FRAME_COUNT = 30;
+
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -101,14 +103,14 @@ void Application::HandleUpdate()
 	HandleSphereInput();
 
 
-	if(!m_bDebugMode)
+	if (!m_bDebugMode)
 	{
 		m_pSphere->Update();
 		m_pSphere2->Update();
 	}
 	else
 	{
-		if ((int)m_frameCount % 30 == 0)
+		if ((int)m_frameCount % DEBUG_FRAME_COUNT == 0)
 		{
 			m_pSphere->Update();
 			m_pSphere2->Update();
@@ -270,59 +272,152 @@ void Application::HandleSphereInput()
 		dbR = false;
 	}
 
-	static bool dbT = false;
-	if (this->IsKeyPressed('T'))
-	{
-		if (dbT == false)
-		{
-			static int dx = 0;
-			static int dy = 0;
-			mSpherePos = XMFLOAT3(mSpherePos.x, 20.0f, mSpherePos.z);
-			mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-			mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
-			mSphereCollided = false;
-			dbT = true;
-		}
-	}
-	else
-	{
-		dbT = false;
-	}
+	static int faceCounter = 0;
+	static int vertexCounter = 0;
 
-	static int dx = 0;
-	static int dy = 0;
-	static int seg = 0;
-	static bool dbN = false;
-
-	if (this->IsKeyPressed('N'))
+	static bool dbU = false;
+	if (this->IsKeyPressed('U'))
 	{
-		if (dbN == false)
+		if (dbU == false)
 		{
-			if (++seg == 2)
+			faceCounter++;
+			if (faceCounter > m_pHeightMap->m_iFaceCount)
 			{
-				seg = 0;
-				if (++dx == 15)
-				{
-					if (++dy == 15) dy = 0;
-					dx = 0;
-				}
+				faceCounter = 0;
 			}
 
-			if (seg == 0)
-				mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) - 0.5f, 20.0f, ((dy - 7.0f) * 2) - 0.5f);
-			else
-				mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) + 0.5f, 20.0f, ((dy - 7.0f) * 2) + 0.5f);
+			vertexCounter = 0;
 
-			mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-			mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
-			mSphereCollided = false;
-			dbN = true;
+			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
+
+			XMFLOAT3 newPos;
+			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
+
+			newPos.y += 20.0f;
+
+			m_pSphere->Reset(newPos, newVel, newAccel);
+
+			dbU = true;
 		}
 	}
 	else
 	{
-		dbN = false;
+		dbU = false;
 	}
+
+	static bool dbI = false;
+	if (this->IsKeyPressed('I'))
+	{
+		if (dbI == false)
+		{
+			faceCounter--;
+			if (faceCounter < 0)
+			{
+				faceCounter = m_pHeightMap->m_iFaceCount;
+			}
+
+			vertexCounter = 0;
+
+			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
+
+			XMFLOAT3 newPos;
+			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
+
+			newPos.y += 20.0f;
+
+			m_pSphere->Reset(newPos, newVel, newAccel);
+			dbI = true;
+		}
+	}
+	else
+	{
+		dbI = false;
+	}
+
+	static bool dbD = false;
+	if (this->IsKeyPressed('D'))
+	{
+		if (dbD == false)
+		{
+			dbD = true;
+			vertexCounter++;
+			if (vertexCounter > 3)
+			{
+				vertexCounter = 0;
+			}
+
+
+			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
+
+			XMFLOAT3 newPos;
+			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
+
+			newPos.y += 20.0f;
+
+			m_pSphere->Reset(newPos, newVel, newAccel);
+		}
+	}
+	else
+	{
+		dbD = false;
+	}
+
+	//static bool dbT = false;
+	//if (this->IsKeyPressed('T'))
+	//{
+	//	if (dbT == false)
+	//	{
+	//		static int dx = 0;
+	//		static int dy = 0;
+	//		mSpherePos = XMFLOAT3(mSpherePos.x, 20.0f, mSpherePos.z);
+	//		mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+	//		mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
+	//		mSphereCollided = false;
+	//		dbT = true;
+	//	}
+	//}
+	//else
+	//{
+	//	dbT = false;
+	//}
+
+	//static int dx = 0;
+	//static int dy = 0;
+	//static int seg = 0;
+	//static bool dbN = false;
+
+	//if (this->IsKeyPressed('N'))
+	//{
+	//	if (dbN == false)
+	//	{
+	//		if (++seg == 2)
+	//		{
+	//			seg = 0;
+	//			if (++dx == 15)
+	//			{
+	//				if (++dy == 15) dy = 0;
+	//				dx = 0;
+	//			}
+	//		}
+
+	//		if (seg == 0)
+	//			mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) - 0.5f, 20.0f, ((dy - 7.0f) * 2) - 0.5f);
+	//		else
+	//			mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) + 0.5f, 20.0f, ((dy - 7.0f) * 2) + 0.5f);
+
+	//		mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+	//		mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
+	//		mSphereCollided = false;
+	//		dbN = true;
+	//	}
+	//}
+	//else
+	//{
+	//	dbN = false;
+	//}
 }
 
 //////////////////////////////////////////////////////////////////////
