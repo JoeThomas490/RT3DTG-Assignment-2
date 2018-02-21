@@ -37,6 +37,10 @@ protected:
 	void HandleStop();
 	void HandleUpdate();
 	void HandleRender();
+
+	void HandleCameraInput();
+	void HandleDebugInput();
+	void HandleSphereInput();
 private:
 
 	float m_frameCount;

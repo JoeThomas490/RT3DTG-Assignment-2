@@ -94,149 +94,8 @@ void Application::ReloadShaders()
 
 void Application::HandleUpdate()
 {
-	if( m_cameraState == CAMERA_ROTATE )
-	{
-		if (this->IsKeyPressed('Q') && m_cameraZ > 38.0f )
-			m_cameraZ -= 1.0f;
-		
-		if (this->IsKeyPressed('A'))
-			m_cameraZ += 1.0f;
-
-		if (this->IsKeyPressed('O'))
-			m_rotationAngle -= .01f;
-		
-		if (this->IsKeyPressed('P'))
-			m_rotationAngle += .01f;
-	}
-
-	
-	static bool dbC = false;
-
-	if (this->IsKeyPressed('C') )	
-	{
-		if( !dbC )
-		{
-			if( ++m_cameraState == CAMERA_MAX )
-				m_cameraState = CAMERA_TOP;
-
-			dbC = true;
-		}
-	}
-	else
-	{
-		dbC = false;
-	}
-
-
-	static bool dbW = false;
-	if (this->IsKeyPressed('W') )	
-	{
-		if( !dbW )
-		{
-			m_bWireframe = !m_bWireframe;
-			this->SetRasterizerState( false, m_bWireframe );
-			dbW = true;
-		}
-	}
-	else
-	{
-		dbW = false;
-	}
-
-
-	if (this->IsKeyPressed(VK_F5))
-	{
-		if (!m_reload)
-		{
-			ReloadShaders();
-			m_reload = true;
-		}
-	}
-	else
-		m_reload = false;
-
-	static bool dbR = false;
-	if (this->IsKeyPressed('R') )
-	{
-		if( dbR == false )
-		{
-			static int dx = 0;
-			static int dy = 0;
-			XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
-			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
-
-			m_pSphere->Reset(newPos, newVel, newAccel);
-
-			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
-			
-			m_pSphere2->Reset(newPos, newVel, newAccel);
-
-			dbR = true;
-		}
-	}
-	else
-	{
-		dbR = false;
-	}
-
-	static bool dbT = false;
-	if (this->IsKeyPressed('T'))
-	{
-		if (dbT == false)
-		{
-			static int dx = 0;
-			static int dy = 0;
-			mSpherePos = XMFLOAT3(mSpherePos.x, 20.0f, mSpherePos.z);
-			mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-			mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
-			mSphereCollided = false;
-			dbT = true;
-		}
-	}
-	else
-	{
-		dbT = false;
-	}
-
-	static int dx = 0;
-	static int dy = 0;
-	static int seg = 0;
-	static bool dbN = false;
-
-	if (this->IsKeyPressed('N') )
-	{
-		if( dbN == false )
-		{
-			if( ++seg == 2 )
-			{
-				seg=0;
-				if( ++dx==15 ) 
-				{
-					if( ++dy ==15 ) dy=0;
-					dx=0;
-				}
-			}
-
-			if( seg == 0 )
-				mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) - 0.5f, 20.0f, ((dy - 7.0f) * 2) - 0.5f);
-			else
-				mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) + 0.5f, 20.0f, ((dy - 7.0f) * 2) + 0.5f);
-
-			mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-			mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
-			mSphereCollided = false;
-			dbN = true;
-		}
-	}
-	else
-	{
-		dbN = false;
-	}
-
 	m_pSphere->Update();
 	m_pSphere2->Update();
-
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -286,6 +145,155 @@ void Application::HandleRender()
 	m_pSphere2->Draw();
 
 	m_frameCount++;
+}
+
+void Application::HandleCameraInput()
+{
+	if (m_cameraState == CAMERA_ROTATE)
+	{
+		if (this->IsKeyPressed('Q') && m_cameraZ > 38.0f)
+			m_cameraZ -= 1.0f;
+
+		if (this->IsKeyPressed('A'))
+			m_cameraZ += 1.0f;
+
+		if (this->IsKeyPressed('O'))
+			m_rotationAngle -= .01f;
+
+		if (this->IsKeyPressed('P'))
+			m_rotationAngle += .01f;
+	}
+
+
+	static bool dbC = false;
+
+	if (this->IsKeyPressed('C'))
+	{
+		if (!dbC)
+		{
+			if (++m_cameraState == CAMERA_MAX)
+				m_cameraState = CAMERA_TOP;
+
+			dbC = true;
+		}
+	}
+	else
+	{
+		dbC = false;
+	}
+}
+
+void Application::HandleDebugInput()
+{
+
+	static bool dbW = false;
+	if (this->IsKeyPressed('W'))
+	{
+		if (!dbW)
+		{
+			m_bWireframe = !m_bWireframe;
+			this->SetRasterizerState(false, m_bWireframe);
+			dbW = true;
+		}
+	}
+	else
+	{
+		dbW = false;
+	}
+
+
+	if (this->IsKeyPressed(VK_F5))
+	{
+		if (!m_reload)
+		{
+			ReloadShaders();
+			m_reload = true;
+		}
+	}
+	else
+		m_reload = false;
+}
+
+void Application::HandleSphereInput()
+{
+	static bool dbR = false;
+	if (this->IsKeyPressed('R'))
+	{
+		if (dbR == false)
+		{
+			static int dx = 0;
+			static int dy = 0;
+			XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
+			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
+
+			m_pSphere->Reset(newPos, newVel, newAccel);
+
+			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
+
+			m_pSphere2->Reset(newPos, newVel, newAccel);
+
+			dbR = true;
+		}
+	}
+	else
+	{
+		dbR = false;
+	}
+
+	static bool dbT = false;
+	if (this->IsKeyPressed('T'))
+	{
+		if (dbT == false)
+		{
+			static int dx = 0;
+			static int dy = 0;
+			mSpherePos = XMFLOAT3(mSpherePos.x, 20.0f, mSpherePos.z);
+			mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+			mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
+			mSphereCollided = false;
+			dbT = true;
+		}
+	}
+	else
+	{
+		dbT = false;
+	}
+
+	static int dx = 0;
+	static int dy = 0;
+	static int seg = 0;
+	static bool dbN = false;
+
+	if (this->IsKeyPressed('N'))
+	{
+		if (dbN == false)
+		{
+			if (++seg == 2)
+			{
+				seg = 0;
+				if (++dx == 15)
+				{
+					if (++dy == 15) dy = 0;
+					dx = 0;
+				}
+			}
+
+			if (seg == 0)
+				mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) - 0.5f, 20.0f, ((dy - 7.0f) * 2) - 0.5f);
+			else
+				mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) + 0.5f, 20.0f, ((dy - 7.0f) * 2) + 0.5f);
+
+			mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
+			mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
+			mSphereCollided = false;
+			dbN = true;
+		}
+	}
+	else
+	{
+		dbN = false;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
