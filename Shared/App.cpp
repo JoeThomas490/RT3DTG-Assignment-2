@@ -583,6 +583,7 @@ int Run(App *pApp)
 		std::chrono::milliseconds deltaTimeMS = std::chrono::duration_cast<std::chrono::milliseconds>(currentT - previousT);
 		pApp->m_fDTime = (float)(deltaTimeMS.count() / 1000.0f);
 
+
 		for(;;)
 		{
 			QueryPerformanceCounter(&now);

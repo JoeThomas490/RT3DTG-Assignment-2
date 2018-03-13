@@ -29,9 +29,10 @@ public:
 	void Reset(XMFLOAT3 mPos, XMFLOAT3 mVel, XMFLOAT3 mAccel);
 
 	void SetHeightmapPtr(HeightMap* pHeightmap);
-
 	void SetPosition(const XMFLOAT3& mNewPos);
 
+	void ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNormal);
+	void PositionalCorrection();
 private:
 	void UpdateMatrices();
 
@@ -60,6 +61,8 @@ private:
 	XMVECTOR m_vCollisionNormal;
 
 	XMMATRIX m_mWorldMatrix;
+
+	float m_fPenetration;
 
 public:
 

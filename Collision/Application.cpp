@@ -255,8 +255,9 @@ void Application::HandleSphereInput()
 			static int dx = 0;
 			static int dy = 0;
 			XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
-			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
+
+			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.025f, 0.0f);
 
 			m_pSphere->Reset(newPos, newVel, newAccel);
 
