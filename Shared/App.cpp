@@ -20,6 +20,8 @@
 
 #include "D3DHelpers.h"
 
+float App::m_fDTime = 0;
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
@@ -565,11 +567,21 @@ int Run(App *pApp)
 	QueryPerformanceCounter(&nextUpdate);
 	nextUpdate.QuadPart += oneFrame.QuadPart;
 
+	std::chrono::system_clock::time_point currentT = std::chrono::system_clock::now();
+	std::chrono::system_clock::time_point previousT;
+
+
 	while (DoMessages())
 	{
 		// Wait until the next 60th-of-a-second boundary has
 		// arrived (or been and gone).
 		LARGE_INTEGER now;
+
+		previousT = currentT;
+		currentT = std::chrono::system_clock::now();
+
+		std::chrono::milliseconds deltaTimeMS = std::chrono::duration_cast<std::chrono::milliseconds>(currentT - previousT);
+		pApp->m_fDTime = (float)(deltaTimeMS.count() / 1000.0f);
 
 		for(;;)
 		{

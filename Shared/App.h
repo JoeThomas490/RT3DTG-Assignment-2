@@ -15,6 +15,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <chrono>
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
@@ -53,6 +55,11 @@ public:
 
 	//
 	void Render();
+
+
+	static float m_fDTime;
+
+
 protected:
 	bool CanRender() const;
 
