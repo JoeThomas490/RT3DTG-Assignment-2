@@ -14,16 +14,44 @@ struct MassData
 {
 	float mass;
 	float inv_mass;
+
+	MassData(float mMass)
+	{
+		mass = mMass;
+		if (mass == 0)
+		{
+			inv_mass = 0;
+		}
+		else
+		{
+			inv_mass = 1 / mass;
+		}
+	}
+
 };
 
- __declspec(align(16)) class DynamicBody
+XMALIGN class DynamicBody
 {
 public:
-	DynamicBody();
+
+	DynamicBody(CommonMesh* mMesh);
 	~DynamicBody();
 
+	void IntegratePosition();
 
-private:
+	void ApplyForce(const XMVECTOR& mForce);
+
+	void SetMesh(CommonMesh* mMesh);
+
+	void Reset(const XMVECTOR& mPos);
+
+	void SetPosition(const XMFLOAT3& mNewPos);
+
+	void ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNormal);
+	void PositionalCorrection();
+
+	
+protected:
 
 	CommonMesh* m_pMesh;
 
@@ -34,20 +62,19 @@ private:
 	XMVECTOR m_vVelocity;
 	XMVECTOR m_vForce;
 	XMVECTOR m_vPosition;
-	
+
+	XMVECTOR m_vCollisionPosition;
+	XMVECTOR m_vCollisionNormal;
+
+	float m_fPenetration;
+
 	XMMATRIX m_mWorldMatrix;
 
 public:
 
-	void* operator new(size_t i)
-	{
-		return _mm_malloc(i, 16);
-	}
+XMNEW
+XMDELETE
 
-	void operator delete(void* p)
-	{
-		_mm_free(p);
-	}
 };
 
 #endif
