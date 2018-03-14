@@ -30,6 +30,12 @@ struct MassData
 
 };
 
+//**********************************************************************************
+// Class : DynamicBody
+// Description : Holds all relevant data to do with a singular dynamic body including
+// position, current velocity, mass etc.
+// Also holds functionality to resolve it's own collisions and integrate position
+//**********************************************************************************
 XMALIGN class DynamicBody
 {
 public:
@@ -40,17 +46,19 @@ public:
 	void IntegratePosition();
 
 	void ApplyForce(const XMVECTOR& mForce);
+	void ResolveCollision(const XMVECTOR& mCollisionPos, const XMVECTOR& mCollisionNormal);
+	void PositionalCorrection(float mPenetration, const XMVECTOR& mCollisionNormal);
 
 	void SetMesh(CommonMesh* mMesh);
 
-	void Reset(const XMVECTOR& mPos);
+	void ResetPosition(const XMVECTOR& mPos);
+	XMVECTOR GetPosition();
 
-	void SetPosition(const XMFLOAT3& mNewPos);
+	void SetVelocity(const XMVECTOR& mVelocity);
+	XMVECTOR GetVelocity();
 
-	void ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNormal);
-	void PositionalCorrection();
+	float GetRadius();
 
-	
 protected:
 
 	CommonMesh* m_pMesh;
@@ -63,12 +71,9 @@ protected:
 	XMVECTOR m_vForce;
 	XMVECTOR m_vPosition;
 
-	XMVECTOR m_vCollisionPosition;
-	XMVECTOR m_vCollisionNormal;
-
-	float m_fPenetration;
-
 	XMMATRIX m_mWorldMatrix;
+
+	float m_fRadius;
 
 public:
 

@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "HeightMap.h"
 #include "Sphere.h"
+#include "PhysicsWorld.h"
 
 Application* Application::s_pApp = NULL;
 

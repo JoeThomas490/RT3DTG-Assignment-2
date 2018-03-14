@@ -10,6 +10,7 @@
 //**********************************************************************
 
 #include "Application.h"
+#include "PhysicsWorld.h"
 
 static const char *const g_aTextureFileNames[] = {
 	"Resources/Intersection.dds",       
@@ -29,6 +30,12 @@ public:
 	void Draw( float frameCount );
 	bool ReloadShader();
 	void DeleteShader();
+
+	void ResetVertexColours();
+	void RebuildVertexData(void);
+
+	std::vector<PhysicsStaticCollision> SphereHeightmap(DynamicBody* body);
+
 	bool RayCollision(XMVECTOR& rayPos, XMVECTOR rayDir, float speed, XMVECTOR& colPos, XMVECTOR& colNormN);
 	bool SphereTriangle(const XMVECTOR& centre, const float radius, XMVECTOR& colPos, XMVECTOR& colNormN, float& colDist);
 	int DisableBelowLevel(float fY);
@@ -59,8 +66,8 @@ private:
 
 	bool TestSphereTriangle(XMVECTOR centre, float radius, int nFaceIndex, XMVECTOR& p, XMVECTOR& colNormN);
 	XMVECTOR ClosestPtPointTriangle(const XMVECTOR& p, int nFaceIndex, XMVECTOR& colNormN);
+
 	bool PointPlane(const XMVECTOR& vert0, const XMVECTOR& vert1, const XMVECTOR& vert2, const XMVECTOR& pointPos);
-	void RebuildVertexData( void );
 	bool PointOverQuad(XMVECTOR& vPos, XMVECTOR& v0, XMVECTOR& v1, XMVECTOR& v2);
 	void BuildCollisionData(void);
 

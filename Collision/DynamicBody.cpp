@@ -33,22 +33,39 @@ void DynamicBody::SetMesh(CommonMesh * mMesh)
 	m_pMesh = mMesh;
 }
 
-void DynamicBody::Reset(const XMVECTOR& mPos)
+void DynamicBody::ResetPosition(const XMVECTOR& mPos)
 {
 	m_vPosition = mPos;
 }
 
-void DynamicBody::SetPosition(const XMFLOAT3 & mNewPos)
+XMVECTOR DynamicBody::GetPosition()
 {
-	m_vPosition = XMVectorSet(mNewPos.x, mNewPos.y, mNewPos.z, 1);
+	return m_vPosition;
 }
 
-void DynamicBody::ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNormal)
+void DynamicBody::SetVelocity(const XMVECTOR & mVelocity)
+{
+	m_vVelocity = mVelocity;
+}
+
+XMVECTOR DynamicBody::GetVelocity()
+{
+	return m_vVelocity;
+}
+
+float DynamicBody::GetRadius()
+{
+	return m_fRadius;
+}
+
+void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionPos, const XMVECTOR& mCollisionNormal)
 {
 	XMVECTOR relativeVelocity = -m_vVelocity;
 
 	XMVECTOR velAlongNormal = XMVector3Dot(relativeVelocity, mCollisionNormal);
 
+	//NOTE: 
+	//This seems to break all collision, hmm..
 	//if (velAlongNormal.m128_f32[0] > 0)
 	//{
 	//	return;
@@ -60,14 +77,17 @@ void DynamicBody::ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNo
 
 	XMVECTOR impulse = j * mCollisionNormal;
 
-	m_vVelocity -= impulse;
+	//NOTE:
+	//This was m_vVelocity so could cause issues?
+	m_vForce -= impulse;
 }
 
-void DynamicBody::PositionalCorrection()
+void DynamicBody::PositionalCorrection(float mPenetration, const XMVECTOR& mCollisionNormal)
 {
 	const float percent = 0.4f;
 	const float slop = 0.05f;
 
-	XMVECTOR correction = max(m_fPenetration - slop, 0.0f) * percent * m_vCollisionNormal;
+	XMVECTOR correction = max(mPenetration - slop, 0.0f) * percent * mCollisionNormal;
 	m_vPosition -= correction;
 }
+

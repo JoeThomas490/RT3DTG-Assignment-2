@@ -1,4 +1,5 @@
 #include "HeightMap.h"
+#include "PhysicsWorld.h"
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -190,6 +191,7 @@ void HeightMap::RebuildVertexData(void)
 
 	Application::s_pApp->GetDeviceContext()->Unmap(m_pHeightMapBuffer, 0);
 }
+
 
 
 int HeightMap::DisableBelowLevel(float fYLevel)
@@ -430,6 +432,13 @@ void HeightMap::DeleteShader()
 	Release(m_pVSCBuffer);
 
 	m_shader.Reset();
+}
+
+void HeightMap::ResetVertexColours()
+{
+	// This resets the collision colouring
+	for (int f = 0; f < m_HeightMapFaceCount; ++f)
+		m_pFaceData[f].m_bCollided = false;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -809,6 +818,30 @@ bool HeightMap::PointPlane(const XMVECTOR& vert0, const XMVECTOR& vert1, const X
 	// Step 5: Return true! (in front of plane)
 	return true;
 }
+
+std::vector<PhysicsStaticCollision> HeightMap::SphereHeightmap(DynamicBody * body)
+{
+	std::vector<PhysicsStaticCollision> collisionList;
+
+	// This is a brute force solution that checks against every triangle in the heightmap
+	for (int f = 0; f < m_HeightMapFaceCount; ++f)
+	{
+		PhysicsStaticCollision collision(body);
+
+		//012 213
+		if (!m_pFaceData[f].m_bDisabled)
+		{	
+			if (TestSphereTriangle(body->GetPosition(), body->GetRadius(), f, collision.collisionPosition, collision.collisionNormal))
+			{
+				m_pFaceData[f].m_bCollided = true;
+				collisionList.push_back(collision);
+			}
+		}
+	}
+
+	return collisionList;
+}
+
 
 bool HeightMap::TestSphereTriangle(XMVECTOR centre, float radius, int nFaceIndex, XMVECTOR & p, XMVECTOR& colNormN)
 {
