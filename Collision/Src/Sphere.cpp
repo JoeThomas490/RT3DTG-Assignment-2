@@ -43,11 +43,11 @@ void Sphere::Update()
 
 			float dTime = Application::s_pApp->m_fDTime;
 
-			vSPos += vSVel; // Really important that we add LAST FRAME'S velocity as this was how fast the collision is expecting the ball to move
-			vSVel += vSAcc; // The new velocity gets passed through to the collision so it can base its predictions on our speed NEXT FRAME
+			vSVel += vSAcc * dTime; // The new velocity gets passed through to the collision so it can base its predictions on our speed NEXT FRAME
 
 			//dprintf("DTIME = %f\n", dTime);
 			XMStoreFloat3(&m_v3Velocity, vSVel);
+			vSPos += vSVel * dTime; // Really important that we add LAST FRAME'S velocity as this was how fast the collision is expecting the ball to move
 			XMStoreFloat3(&m_v3Position, vSPos);
 
 			m_fSpeed = XMVectorGetX(XMVector3Length(vSVel));
@@ -55,13 +55,18 @@ void Sphere::Update()
 			float distance;
 			//m_bHasCollided = m_pHeightMap->RayCollision(vSPos, vSVel, m_fSpeed, m_vCollisionPos, m_vCollisionNormal);
 			m_bHasCollided = m_pHeightMap->SphereTriangle(vSPos, 1.0f, m_vCollisionPos, m_vCollisionNormal, distance);
-			//m_fPenetration = XMVector3Length(vSPos - m_vCollisionPos).m128_f32[0];
+
+			XMVECTOR v = m_vCollisionPos - vSPos;
+			const float distSquared = XMVectorGetX(XMVector3Dot(v, v));
+
+			m_fPenetration = (XMVectorGetX(XMVector3Length(m_vCollisionPos - vSPos)) - m_fRadius);
+			//m_fPenetration = m_fRadius - sqrt(distSquared);
 
 
 			if (m_bHasCollided)
 			{
 				ResolveCollision(m_vCollisionPos, m_vCollisionNormal);
-				//PositionalCorrection();
+				PositionalCorrection();
 			}
 		}
 
@@ -133,7 +138,7 @@ void Sphere::ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNormal)
 	//	return;
 	//}
 
-	float e = 0.1f;
+	float e = 0.5f;
 
 	float j = -(1 + e) * velAlongNormal.m128_f32[0];
 
@@ -147,10 +152,10 @@ void Sphere::ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNormal)
 
 void Sphere::PositionalCorrection()
 {
-	const float percent = 0.2f;
-	const float slop = 0.01f;
+	const float percent = 0.4f;
+	const float slop = 0.05f;
 
-	XMVECTOR correction = max(m_fPenetration - slop, 0.0f) * m_vCollisionNormal;
+	XMVECTOR correction = max(m_fPenetration - slop, 0.0f) * percent * m_vCollisionNormal;
 
 	XMVECTOR pos = XMLoadFloat3(&m_v3Position);
 	pos -= correction;
