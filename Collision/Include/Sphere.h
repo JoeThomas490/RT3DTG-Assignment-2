@@ -33,6 +33,9 @@ public:
 
 	void ResolveCollision(XMVECTOR mCollisionPos, XMVECTOR mCollisionNormal);
 	void PositionalCorrection();
+
+	XMFLOAT3 m_v3Position;
+
 private:
 	void UpdateMatrices();
 
@@ -52,7 +55,6 @@ private:
 
 	bool m_bIsVisible;
 
-	XMFLOAT3 m_v3Position;
 	XMFLOAT3 m_v3Velocity;
 	XMFLOAT3 m_v3Acceleration;
 

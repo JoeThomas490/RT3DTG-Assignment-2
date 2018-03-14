@@ -739,6 +739,30 @@ bool HeightMap::RayTriangle(int nFaceIndex, const XMVECTOR& rayPos, const XMVECT
 	return true;
 }
 
+bool HeightMap::SphereTriangle(const XMVECTOR & centre, const float radius, XMVECTOR & colPos, XMVECTOR & colNormN, float & colDist)
+{
+	// This resets the collision colouring
+	for (int f = 0; f < m_HeightMapFaceCount; ++f)
+		m_pFaceData[f].m_bCollided = false;
+
+	// This is a brute force solution that checks against every triangle in the heightmap
+	for (int f = 0; f < m_HeightMapFaceCount; ++f)
+	{
+		//012 213
+		if (!m_pFaceData[f].m_bDisabled)
+		{
+			if (TestSphereTriangle(centre, radius, f, colPos, colNormN))
+			{
+				m_pFaceData[f].m_bCollided = true;
+				RebuildVertexData();
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 // Function:	pointPlane
 // Description: Tests a point to see if it is in front of a plane
 // Parameters:
@@ -747,7 +771,6 @@ bool HeightMap::RayTriangle(int nFaceIndex, const XMVECTOR& rayPos, const XMVECT
 //				vert3		Third point on plane 
 //				pointPos	Point to test
 // Returns: 	true if the point is in front of the plane
-
 bool HeightMap::PointPlane(const XMVECTOR& vert0, const XMVECTOR& vert1, const XMVECTOR& vert2, const XMVECTOR& pointPos)
 {
 	// For any point on the plane [x,y,z] Ax + By + Cz + D = 0
@@ -786,3 +809,108 @@ bool HeightMap::PointPlane(const XMVECTOR& vert0, const XMVECTOR& vert1, const X
 	// Step 5: Return true! (in front of plane)
 	return true;
 }
+
+bool HeightMap::TestSphereTriangle(XMVECTOR centre, float radius, int nFaceIndex, XMVECTOR & p, XMVECTOR& colNormN)
+{
+
+	p = ClosestPtPointTriangle(centre, nFaceIndex, colNormN);
+
+	//Sphere and triangle intersect if the (squared) distance from sphere
+	//center to point p is less than the (squared) radius
+
+	XMVECTOR v = p - centre;
+	bool collided = false;
+	if (XMVectorGetX(XMVector3Dot(v, v)) <= radius * radius)
+	{
+		collided = true;
+	}
+	return collided;
+}
+
+
+XMVECTOR HeightMap::ClosestPtPointTriangle(const XMVECTOR& p, int nFaceIndex, XMVECTOR& colNormN)
+{
+	XMVECTOR vert0, vert1, vert2;
+
+	//Get vertices from face data array
+	vert0 = XMLoadFloat3(&m_pFaceData[nFaceIndex].m_v0);
+	vert1 = XMLoadFloat3(&m_pFaceData[nFaceIndex].m_v1);
+	vert2 = XMLoadFloat3(&m_pFaceData[nFaceIndex].m_v2);
+
+	XMVECTOR norm = XMVector3Cross(vert2 - vert0, vert2 - vert1);
+	colNormN = XMVector3Normalize(norm);
+
+
+	//Check if point P (Centre of sphere) is in vertex region outside A
+	XMVECTOR ab = vert1 - vert0;
+	XMVECTOR ac = vert2 - vert0;
+	XMVECTOR ap = p - vert0;
+
+	float d1 = XMVectorGetX(XMVector3Dot(ab, ap));
+	float d2 = XMVectorGetX(XMVector3Dot(ac, ap));
+	//Barycentric coordinates (1,0,0)
+	if (d1 <= 0.0f && d2 <= 0.0f)
+	{
+		return vert0;
+	}
+
+
+
+	//Check if point P (Centre of sphere) is in vertex region outside B
+	XMVECTOR bp = p - vert1;
+	float d3 = XMVectorGetX(XMVector3Dot(ab, bp));
+	float d4 = XMVectorGetX(XMVector3Dot(ac, bp));
+	//Barycentric coordinates (0,1,0)
+	if (d3 >= 0.0f && d4 <= d3)
+	{
+		return vert1;
+	}
+
+
+	//Check if point P in edge region of AB, if so return projection of P onto AB
+	float vc = (d1 * d4) - (d3 * d2);
+
+	if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
+	{
+		float v = d1 / (d1 - d3);
+		return vert0 + v * ab;
+	}
+
+	//Check if point P (Centre of sphere) is in vertex region outside C
+	XMVECTOR cp = p - vert2;
+	float d5 = XMVectorGetX(XMVector3Dot(ab, cp));
+	float d6 = XMVectorGetX(XMVector3Dot(ac, cp));
+	//Barycentric coordinates (0,0,1)
+	if (d6 >= 0.0f && d5 <= d6)
+	{
+		return vert2;
+	}
+
+	//Check if point P in edge region of AC, if so return projection of P onto AC
+	float vb = (d5 * d2) - (d1 * d6);
+	if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)
+	{
+		float w = d2 / (d2 - d6);
+		return vert0 + w * ac;
+	}
+
+	//Check if point P in edge region of BC, if so return projection of P onto BC
+	float va = (d3 * d6) - (d5 * d4);
+	if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f)
+	{
+		float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+		return vert1 + w * (vert2 - vert1);
+	}
+
+	//P inside face region. Compute Q through its barycentric coordinates (u, v, w)
+	float denom = 1.0f / (va + vb + vc);
+	float v = vb * denom;
+	float w = vc * denom;
+
+	// = u * a + v * b + w* c
+	return vert0 + ab * v + ac * w;
+
+
+}
+
+

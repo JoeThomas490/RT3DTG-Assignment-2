@@ -30,6 +30,7 @@ public:
 	bool ReloadShader();
 	void DeleteShader();
 	bool RayCollision(XMVECTOR& rayPos, XMVECTOR rayDir, float speed, XMVECTOR& colPos, XMVECTOR& colNormN);
+	bool SphereTriangle(const XMVECTOR& centre, const float radius, XMVECTOR& colPos, XMVECTOR& colNormN, float& colDist);
 	int DisableBelowLevel(float fY);
 	int EnableAll(void);
 
@@ -54,6 +55,10 @@ private:
 
 	bool LoadHeightMap(char* filename, float gridSize, float heightRange);
 	bool RayTriangle(int nFaceIndex, const XMVECTOR& rayPos, const XMVECTOR& rayDir, XMVECTOR& colPos, XMVECTOR& colNormN, float& colDist);
+	
+
+	bool TestSphereTriangle(XMVECTOR centre, float radius, int nFaceIndex, XMVECTOR& p, XMVECTOR& colNormN);
+	XMVECTOR ClosestPtPointTriangle(const XMVECTOR& p, int nFaceIndex, XMVECTOR& colNormN);
 	bool PointPlane(const XMVECTOR& vert0, const XMVECTOR& vert1, const XMVECTOR& vert2, const XMVECTOR& pointPos);
 	void RebuildVertexData( void );
 	bool PointOverQuad(XMVECTOR& vPos, XMVECTOR& v0, XMVECTOR& v1, XMVECTOR& v2);

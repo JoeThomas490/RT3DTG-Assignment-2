@@ -35,29 +35,34 @@ void Sphere::Update()
 	XMVECTOR vSVel = XMLoadFloat3(&m_v3Velocity);
 	XMVECTOR vSAcc = XMLoadFloat3(&m_v3Acceleration);
 
-	if (m_pHeightMap != nullptr)
+	//if (!m_bHasCollided)
 	{
 
-		float dTime = Application::s_pApp->m_fDTime;
-
-		vSPos += vSVel; // Really important that we add LAST FRAME'S velocity as this was how fast the collision is expecting the ball to move
-		vSVel += vSAcc; // The new velocity gets passed through to the collision so it can base its predictions on our speed NEXT FRAME
-
-		//dprintf("DTIME = %f\n", dTime);
-		XMStoreFloat3(&m_v3Velocity, vSVel);
-		XMStoreFloat3(&m_v3Position, vSPos);
-
-		m_fSpeed = XMVectorGetX(XMVector3Length(vSVel));
-
-		m_bHasCollided = m_pHeightMap->RayCollision(vSPos, vSVel, m_fSpeed, m_vCollisionPos, m_vCollisionNormal);
-		m_fPenetration = XMVector3Length(vSPos - m_vCollisionPos).m128_f32[0];
-
-
-		if (m_bHasCollided)
+		if (m_pHeightMap != nullptr)
 		{
-			ResolveCollision(m_vCollisionPos, m_vCollisionNormal);
-			//m_v3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			//XMStoreFloat3(&m_v3Position, m_vCollisionPos);
+
+			float dTime = Application::s_pApp->m_fDTime;
+
+			vSPos += vSVel; // Really important that we add LAST FRAME'S velocity as this was how fast the collision is expecting the ball to move
+			vSVel += vSAcc; // The new velocity gets passed through to the collision so it can base its predictions on our speed NEXT FRAME
+
+			//dprintf("DTIME = %f\n", dTime);
+			XMStoreFloat3(&m_v3Velocity, vSVel);
+			XMStoreFloat3(&m_v3Position, vSPos);
+
+			m_fSpeed = XMVectorGetX(XMVector3Length(vSVel));
+
+			float distance;
+			//m_bHasCollided = m_pHeightMap->RayCollision(vSPos, vSVel, m_fSpeed, m_vCollisionPos, m_vCollisionNormal);
+			m_bHasCollided = m_pHeightMap->SphereTriangle(vSPos, 1.0f, m_vCollisionPos, m_vCollisionNormal, distance);
+			//m_fPenetration = XMVector3Length(vSPos - m_vCollisionPos).m128_f32[0];
+
+
+			if (m_bHasCollided)
+			{
+				ResolveCollision(m_vCollisionPos, m_vCollisionNormal);
+				//PositionalCorrection();
+			}
 		}
 
 

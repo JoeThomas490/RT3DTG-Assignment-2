@@ -263,7 +263,7 @@ void Application::HandleSphereInput()
 
 			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
 
-			m_pSphere2->Reset(newPos, newVel, newAccel);
+			//m_pSphere2->Reset(newPos, newVel, newAccel);
 
 			dbR = true;
 		}
