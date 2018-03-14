@@ -18,26 +18,23 @@ const int DEBUG_FRAME_COUNT = 30;
 bool Application::HandleStart()
 {
 	s_pApp = this;
-
 	m_frameCount = 0.0f;
+
+	m_pSphereMesh = CommonMesh::NewSphereMesh(this, 1.0f, 16, 16);
+
 
 	m_bWireframe = true;
 	m_pHeightMap = new HeightMap("Resources/heightmap.bmp", 2.0f, 0.75f);
 
-	Sphere::LoadResources();
+	m_pPhysicsWorld = new PhysicsWorld(m_pHeightMap);
 
-	m_pSphere = new Sphere();
-	m_pSphere->SetHeightmapPtr(m_pHeightMap);
+	m_pSphere = new Sphere(m_pSphereMesh, 1.0f);
+	//m_pSphere2 = new Sphere(m_pSphereMesh, 1.0f);
 
-	m_pSphere2 = new Sphere();
-	m_pSphere2->SetHeightmapPtr(m_pHeightMap);
+	m_pPhysicsWorld->AddBody(m_pSphere);
+	//m_pPhysicsWorld->AddBody(m_pSphere2);
 
 	m_bDebugMode = false;
-
-	//m_pSphereMesh = CommonMesh::NewSphereMesh(this, 1.0f, 16, 16);
-	//mSpherePos = XMFLOAT3( -14.0, 20.0f, -14.0f );
-	//mSphereVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	//mGravityAcc = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	m_cameraZ = 50.0f;
 	m_rotationAngle = 0.f;
@@ -52,11 +49,6 @@ bool Application::HandleStart()
 	this->SetRasterizerState(false, m_bWireframe);
 
 	m_cameraState = CAMERA_ROTATE;
-
-	//mSphereCollided = false;
-
-
-
 	return true;
 }
 
@@ -73,13 +65,17 @@ void Application::HandleStop()
 		m_pSphere = nullptr;
 	}
 
-	if (m_pSphere2 != nullptr)
-	{
-		delete m_pSphere2;
-		m_pSphere2 = nullptr;
-	}
+	//if (m_pSphere2 != nullptr)
+	//{
+	//	delete m_pSphere2;
+	//	m_pSphere2 = nullptr;
+	//}
 
-	Sphere::DeleteResources();
+	if (m_pPhysicsWorld != nullptr)
+	{
+		delete m_pPhysicsWorld;
+		m_pPhysicsWorld = nullptr;
+	}
 
 	this->CommonApp::HandleStop();
 }
@@ -103,18 +99,19 @@ void Application::HandleUpdate()
 	HandleDebugInput();
 	HandleSphereInput();
 
+	m_pPhysicsWorld->UpdateWorld();
 
 	if (!m_bDebugMode)
 	{
 		m_pSphere->Update();
-		m_pSphere2->Update();
+		//m_pSphere2->Update();
 	}
 	else
 	{
 		if ((int)m_frameCount % DEBUG_FRAME_COUNT == 0)
 		{
 			m_pSphere->Update();
-			m_pSphere2->Update();
+			//m_pSphere2->Update();
 		}
 	}
 }
@@ -163,7 +160,7 @@ void Application::HandleRender()
 	SetDepthStencilState(true, true);
 
 	m_pSphere->Draw();
-	m_pSphere2->Draw();
+	//m_pSphere2->Draw();
 
 	m_frameCount++;
 }
@@ -260,11 +257,12 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
 			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -10.025f, 0.0f);
 
-			m_pSphere->Reset(newPos, newVel, newAccel);
+			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
+			m_pSphere->SetVelocity(XMVectorSet(0, 0, 0, 0));
 
 			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
 
-			m_pSphere2->Reset(newPos, newVel, newAccel);
+			//m_pSphere2->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
 
 			dbR = true;
 		}
@@ -298,7 +296,8 @@ void Application::HandleSphereInput()
 
 			newPos.y += 20.0f;
 
-			m_pSphere->Reset(newPos, newVel, newAccel);
+			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
+
 
 			dbU = true;
 		}
@@ -329,7 +328,8 @@ void Application::HandleSphereInput()
 
 			newPos.y += 20.0f;
 
-			m_pSphere->Reset(newPos, newVel, newAccel);
+			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
+
 			dbI = true;
 		}
 	}
@@ -359,7 +359,8 @@ void Application::HandleSphereInput()
 
 			newPos.y += 20.0f;
 
-			m_pSphere->Reset(newPos, newVel, newAccel);
+			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
+
 		}
 	}
 	else

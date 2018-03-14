@@ -49,6 +49,8 @@ private:
 	std::vector<PhysicsStaticCollision> m_staticCollisionList;
 
 	HeightMap* m_pHeightMap;
+
+	const float GRAVITY = -8.0f;
 };
 
 #endif

@@ -1,10 +1,23 @@
 #include "DynamicBody.h"
 
 
-DynamicBody::DynamicBody(CommonMesh * mMesh)
-	: m_pMesh(mMesh), m_massData(1)
+DynamicBody::DynamicBody()
+	: m_pMesh(nullptr), m_massData(1), m_fRadius(0)
 {
+	m_vPosition = XMVectorSet(0, 0, 0, 0);
+	m_vVelocity = XMVectorSet(0, 0, 0, 0);
+	m_vForce = XMVectorSet(0, 0, 0, 0);
+}
 
+DynamicBody::DynamicBody(CommonMesh * mMesh, float mRadius)
+	: m_massData(1.0f)
+{
+	m_vPosition = XMVectorSet(0, 0, 0, 0);
+	m_vVelocity = XMVectorSet(0, 0, 0, 0);
+	m_vForce = XMVectorSet(0, 0, 0, 0);
+
+	m_pMesh = mMesh;
+	m_fRadius = mRadius;
 }
 
 DynamicBody::~DynamicBody()
@@ -16,6 +29,8 @@ DynamicBody::~DynamicBody()
 void DynamicBody::IntegratePosition()
 {
 	float dTime = Application::s_pApp->m_fDTime;
+
+	dprintf("FORCE: %f , %f , %f \n", XMVectorGetX(m_vForce), XMVectorGetY(m_vForce), XMVectorGetZ(m_vForce));
 
 	m_vVelocity += (m_massData.inv_mass * m_vForce) * dTime;
 	m_vPosition += m_vVelocity * dTime;
@@ -33,7 +48,7 @@ void DynamicBody::SetMesh(CommonMesh * mMesh)
 	m_pMesh = mMesh;
 }
 
-void DynamicBody::ResetPosition(const XMVECTOR& mPos)
+void DynamicBody::SetPosition(const XMVECTOR& mPos)
 {
 	m_vPosition = mPos;
 }
@@ -66,12 +81,12 @@ void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionPos, const XMVECTOR
 
 	//NOTE: 
 	//This seems to break all collision, hmm..
-	//if (velAlongNormal.m128_f32[0] > 0)
-	//{
-	//	return;
-	//}
+	if (XMVectorGetX(velAlongNormal) < 0)
+	{
+		return;
+	}
 
-	float e = 0.5f;
+	float e = 0.2f;
 
 	float j = -(1 + e) * XMVectorGetX(velAlongNormal);
 
@@ -79,15 +94,15 @@ void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionPos, const XMVECTOR
 
 	//NOTE:
 	//This was m_vVelocity so could cause issues?
-	m_vForce -= impulse;
+	m_vVelocity -= impulse;
 }
 
 void DynamicBody::PositionalCorrection(float mPenetration, const XMVECTOR& mCollisionNormal)
 {
-	const float percent = 0.4f;
-	const float slop = 0.05f;
+	const float percent = 0.1f;
+	const float slop = 0.01f;
 
 	XMVECTOR correction = max(mPenetration - slop, 0.0f) * percent * mCollisionNormal;
-	m_vPosition -= correction;
+	m_vPosition += correction;
 }
 

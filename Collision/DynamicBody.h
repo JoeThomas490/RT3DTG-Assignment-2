@@ -40,7 +40,8 @@ XMALIGN class DynamicBody
 {
 public:
 
-	DynamicBody(CommonMesh* mMesh);
+	DynamicBody();
+	DynamicBody(CommonMesh* mMesh, float mRadius);
 	~DynamicBody();
 
 	void IntegratePosition();
@@ -51,7 +52,7 @@ public:
 
 	void SetMesh(CommonMesh* mMesh);
 
-	void ResetPosition(const XMVECTOR& mPos);
+	void SetPosition(const XMVECTOR& mPos);
 	XMVECTOR GetPosition();
 
 	void SetVelocity(const XMVECTOR& mVelocity);
@@ -70,8 +71,6 @@ protected:
 	XMVECTOR m_vVelocity;
 	XMVECTOR m_vForce;
 	XMVECTOR m_vPosition;
-
-	XMMATRIX m_mWorldMatrix;
 
 	float m_fRadius;
 

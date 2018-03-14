@@ -16,6 +16,7 @@
 
 class HeightMap;
 class Sphere;
+class PhysicsWorld;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -61,8 +62,11 @@ private:
 
 	Sphere* m_pSphere;
 	Sphere* m_pSphere2;
-
 	CommonMesh *m_pSphereMesh;
+
+	PhysicsWorld* m_pPhysicsWorld;
+
+
 	XMFLOAT3 mSpherePos;
 	XMFLOAT3 mSphereVel;
 	float mSphereSpeed;

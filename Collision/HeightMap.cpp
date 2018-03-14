@@ -819,6 +819,7 @@ bool HeightMap::PointPlane(const XMVECTOR& vert0, const XMVECTOR& vert1, const X
 	return true;
 }
 
+//TODO : Move this into PhysicsWorld
 std::vector<PhysicsStaticCollision> HeightMap::SphereHeightmap(DynamicBody * body)
 {
 	std::vector<PhysicsStaticCollision> collisionList;
@@ -834,6 +835,10 @@ std::vector<PhysicsStaticCollision> HeightMap::SphereHeightmap(DynamicBody * bod
 			if (TestSphereTriangle(body->GetPosition(), body->GetRadius(), f, collision.collisionPosition, collision.collisionNormal))
 			{
 				m_pFaceData[f].m_bCollided = true;
+
+				collision.penetrationDepth = -(XMVectorGetX(XMVector3Length(collision.collisionPosition - body->GetPosition())) - body->GetRadius());
+
+				bool repeat = false;
 				collisionList.push_back(collision);
 			}
 		}

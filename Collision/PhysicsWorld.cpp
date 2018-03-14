@@ -3,6 +3,7 @@
 
 
 
+
 PhysicsWorld::PhysicsWorld()
 {
 	m_pHeightMap = nullptr;
@@ -46,14 +47,22 @@ void PhysicsWorld::HandleStaticCollision()
 
 		for (auto collision : m_staticCollisionList)
 		{
-			collision.body->ResolveCollision(collision.collisionNormal, collision.collisionPosition);
+			collision.body->ResolveCollision(collision.collisionPosition, collision.collisionNormal);
+		}
+
+		for(auto collision : m_staticCollisionList)
+		{
 			collision.body->PositionalCorrection(collision.penetrationDepth, collision.collisionNormal);
 		}
 
 		for (auto body : m_dynamicBodyList)
 		{
+			//Apply gravity
+			body->ApplyForce(XMVectorSet(0, GRAVITY, 0, 0));
 			body->IntegratePosition();
 		}
+
+		m_staticCollisionList.clear();
 
 		m_pHeightMap->RebuildVertexData();
 	}
