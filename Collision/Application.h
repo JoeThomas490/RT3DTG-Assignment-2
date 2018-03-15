@@ -15,8 +15,8 @@
 #include "CommonMesh.h"
 
 class HeightMap;
-class Sphere;
 class PhysicsWorld;
+class Sphere;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -44,6 +44,14 @@ protected:
 	void HandleCameraInput();
 	void HandleDebugInput();
 	void HandleSphereInput();
+
+private:
+
+	void AddSphere();
+	void RemoveSphere();
+
+	XMVECTOR GetRandomPosition();
+
 private:
 
 	float m_frameCount;
@@ -60,11 +68,11 @@ private:
 
 	HeightMap* m_pHeightMap;
 
-	Sphere* m_pSphere;
-	Sphere* m_pSphere2;
 	CommonMesh *m_pSphereMesh;
 
 	PhysicsWorld* m_pPhysicsWorld;
+
+	int m_iSphereCount = 0;
 
 
 	XMFLOAT3 mSpherePos;

@@ -2,6 +2,7 @@
 #define _PHYSICS_WORLD_H_
 
 #include <vector>
+#include <algorithm>
 
 #include "DynamicBody.h"
 #include "Application.h"
@@ -26,6 +27,33 @@ XMALIGN struct PhysicsStaticCollision
 	XMDELETE;
 };
 
+XMALIGN struct PhysicsDynamicCollision
+{
+	DynamicBody* bodyA;
+	DynamicBody* bodyB;
+	XMVECTOR collisionNormal;
+	float penetrationDepth;
+
+	PhysicsDynamicCollision(DynamicBody* mBodyA, DynamicBody* mBodyB)
+	{
+		bodyA = mBodyA;
+		bodyB = mBodyB;
+		collisionNormal = XMVectorSet(0, 0, 0, 0);
+		penetrationDepth = 0;
+	}
+
+	XMNEW;
+	XMDELETE;
+};
+
+
+//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
+struct BodyPair
+{
+	DynamicBody* bodyA;
+	DynamicBody* bodyB;
+};
+
 class PhysicsWorld
 {
 public:
@@ -35,18 +63,28 @@ public:
 	~PhysicsWorld();
 
 	void AddBody(DynamicBody* body);
+	void RemoveBody(DynamicBody* body);
+
 	void UpdateWorld();
 
 private:
 
 	void HandleStaticCollision();
+	void HandleDynamicCollision();
+	void GeneratePairs();
 
+	void PositionalCorrection(PhysicsDynamicCollision* collisionPair);
+
+	bool CircleVsCircle(PhysicsDynamicCollision* collisionPair);
 
 private:
 
 	std::vector<DynamicBody*> m_dynamicBodyList;
 
 	std::vector<PhysicsStaticCollision> m_staticCollisionList;
+	std::vector<PhysicsDynamicCollision> m_dynamicCollisionList;
+
+	std::vector<BodyPair> m_dynamicBodyPairs;
 
 	HeightMap* m_pHeightMap;
 

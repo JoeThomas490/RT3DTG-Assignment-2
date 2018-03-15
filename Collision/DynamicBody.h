@@ -4,6 +4,8 @@
 #include "Application.h"
 
 
+class PhysicsWorld;
+
 struct Material
 {
 	float density;
@@ -47,8 +49,8 @@ public:
 	void IntegratePosition();
 
 	void ApplyForce(const XMVECTOR& mForce);
-	void ResolveCollision(const XMVECTOR& mCollisionPos, const XMVECTOR& mCollisionNormal);
-	void PositionalCorrection(float mPenetration, const XMVECTOR& mCollisionNormal);
+	void ResolveCollision(const XMVECTOR& mCollisionNormal);
+	void PositionalCorrectionHeightmap(float mPenetration, const XMVECTOR& mCollisionNormal);
 
 	void SetMesh(CommonMesh* mMesh);
 
@@ -59,6 +61,10 @@ public:
 	XMVECTOR GetVelocity();
 
 	float GetRadius();
+	void SetRadius(float mRadius);
+
+	bool GetActive();
+	void SetActive(bool isActive);
 
 protected:
 
@@ -73,6 +79,8 @@ protected:
 	XMVECTOR m_vPosition;
 
 	float m_fRadius;
+
+	bool m_bIsActive;
 
 public:
 

@@ -1,7 +1,7 @@
 #include "Application.h"
 #include "HeightMap.h"
-#include "Sphere.h"
 #include "PhysicsWorld.h"
+#include "Sphere.h"
 
 Application* Application::s_pApp = NULL;
 
@@ -11,6 +11,11 @@ const int CAMERA_MAX = 2;
 
 const int DEBUG_FRAME_COUNT = 30;
 
+const int MAX_SPHERES = 25;
+
+//Sphere m_sphereArray[MAX_SPHERES];
+
+std::vector<Sphere*> m_pSphereArray;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -28,11 +33,24 @@ bool Application::HandleStart()
 
 	m_pPhysicsWorld = new PhysicsWorld(m_pHeightMap);
 
-	m_pSphere = new Sphere(m_pSphereMesh, 1.0f);
-	//m_pSphere2 = new Sphere(m_pSphereMesh, 1.0f);
+	/*for (int i = 0; i < MAX_SPHERES; i++)
+	{
+		m_sphereArray[i].SetMesh(m_pSphereMesh);
+		m_sphereArray[i].SetRadius(1.0f);
 
-	m_pPhysicsWorld->AddBody(m_pSphere);
-	//m_pPhysicsWorld->AddBody(m_pSphere2);
+		m_pPhysicsWorld->AddBody(&m_sphereArray[i]);
+		m_sphereArray[i].SetActive(false);
+	}
+
+	
+
+	m_sphereArray[0].SetActive(true);
+	m_sphereArray[0].SetPosition(GetRandomPosition());*/
+
+	m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
+	m_pPhysicsWorld->AddBody(m_pSphereArray[0]);
+
+	m_iSphereCount = 0;
 
 	m_bDebugMode = false;
 
@@ -58,18 +76,6 @@ bool Application::HandleStart()
 void Application::HandleStop()
 {
 	delete m_pHeightMap;
-
-	if (m_pSphere != nullptr)
-	{
-		delete m_pSphere;
-		m_pSphere = nullptr;
-	}
-
-	//if (m_pSphere2 != nullptr)
-	//{
-	//	delete m_pSphere2;
-	//	m_pSphere2 = nullptr;
-	//}
 
 	if (m_pPhysicsWorld != nullptr)
 	{
@@ -103,15 +109,25 @@ void Application::HandleUpdate()
 
 	if (!m_bDebugMode)
 	{
-		m_pSphere->Update();
-		//m_pSphere2->Update();
+		for (auto sphere : m_pSphereArray)
+		{
+			if (sphere->GetActive())
+			{
+				sphere->Update();
+			}
+		}
 	}
 	else
 	{
 		if ((int)m_frameCount % DEBUG_FRAME_COUNT == 0)
 		{
-			m_pSphere->Update();
-			//m_pSphere2->Update();
+			for (auto sphere : m_pSphereArray)
+			{
+				if (sphere->GetActive())
+				{
+					sphere->Update();
+				}
+			}
 		}
 	}
 }
@@ -159,8 +175,13 @@ void Application::HandleRender()
 	this->SetWorldMatrix(worldMtx);
 	SetDepthStencilState(true, true);
 
-	m_pSphere->Draw();
-	//m_pSphere2->Draw();
+	for (auto sphere : m_pSphereArray)
+	{
+		if (sphere->GetActive())
+		{
+			sphere->Draw();
+		}
+	}
 
 	m_frameCount++;
 }
@@ -245,6 +266,40 @@ void Application::HandleDebugInput()
 
 void Application::HandleSphereInput()
 {
+	static bool dbUp = false;
+
+	if (this->IsKeyPressed(38))
+	{
+		if (dbUp == false)
+		{
+			dbUp = true;
+
+			AddSphere();
+		}
+	}
+	else
+	{
+		dbUp = false;
+	}
+
+	static bool dbDown = false;
+
+	if (this->IsKeyPressed(38))
+	{
+		if (dbDown == false)
+		{
+			dbDown = true;
+
+			RemoveSphere();
+		}
+	}
+	else
+	{
+		dbDown = false;
+	}
+
+
+
 	static bool dbR = false;
 	if (this->IsKeyPressed('R'))
 	{
@@ -257,12 +312,7 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
 			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -10.025f, 0.0f);
 
-			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
-			m_pSphere->SetVelocity(XMVectorSet(0, 0, 0, 0));
-
 			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
-
-			//m_pSphere2->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
 
 			dbR = true;
 		}
@@ -296,9 +346,6 @@ void Application::HandleSphereInput()
 
 			newPos.y += 20.0f;
 
-			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
-
-
 			dbU = true;
 		}
 	}
@@ -328,8 +375,6 @@ void Application::HandleSphereInput()
 
 			newPos.y += 20.0f;
 
-			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
-
 			dbI = true;
 		}
 	}
@@ -358,8 +403,6 @@ void Application::HandleSphereInput()
 			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
 
 			newPos.y += 20.0f;
-
-			m_pSphere->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
 
 		}
 	}
@@ -421,6 +464,41 @@ void Application::HandleSphereInput()
 	//{
 	//	dbN = false;
 	//}
+}
+
+void Application::AddSphere()
+{
+	m_iSphereCount++;
+	if (m_iSphereCount < MAX_SPHERES)
+	{
+		m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
+		m_pSphereArray[m_iSphereCount]->SetPosition(GetRandomPosition());
+		m_pPhysicsWorld->AddBody(m_pSphereArray[m_iSphereCount]);
+	}
+	else
+	{
+		m_iSphereCount = MAX_SPHERES - 1;
+	}
+
+}
+
+void Application::RemoveSphere()
+{
+	/*m_sphereArray[m_iSphereCount].SetActive(false);
+	m_sphereArray[m_iSphereCount].SetPosition(GetRandomPosition());
+	m_iSphereCount--;
+
+	if (m_iSphereCount < 0)
+	{
+		m_iSphereCount = 0;
+	}*/
+	
+}
+
+XMVECTOR Application::GetRandomPosition()
+{
+	XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
+	return XMVectorSet(newPos.x, newPos.y, newPos.z, 1);
 }
 
 //////////////////////////////////////////////////////////////////////

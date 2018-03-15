@@ -32,6 +32,8 @@ void DynamicBody::IntegratePosition()
 
 	dprintf("FORCE: %f , %f , %f \n", XMVectorGetX(m_vForce), XMVectorGetY(m_vForce), XMVectorGetZ(m_vForce));
 
+	//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
+	//NUMERICAL INTEGRATION, SPRING ENERGY
 	m_vVelocity += (m_massData.inv_mass * m_vForce) * dTime;
 	m_vPosition += m_vVelocity * dTime;
 
@@ -73,7 +75,23 @@ float DynamicBody::GetRadius()
 	return m_fRadius;
 }
 
-void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionPos, const XMVECTOR& mCollisionNormal)
+void DynamicBody::SetRadius(float mRadius)
+{
+	m_fRadius = mRadius;
+}
+
+bool DynamicBody::GetActive()
+{
+	return m_bIsActive;
+}
+
+void DynamicBody::SetActive(bool isActive)
+{
+	m_bIsActive = isActive;
+}
+
+//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
+void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionNormal)
 {
 	XMVECTOR relativeVelocity = -m_vVelocity;
 
@@ -97,7 +115,8 @@ void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionPos, const XMVECTOR
 	m_vVelocity -= impulse;
 }
 
-void DynamicBody::PositionalCorrection(float mPenetration, const XMVECTOR& mCollisionNormal)
+//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
+void DynamicBody::PositionalCorrectionHeightmap(float mPenetration, const XMVECTOR& mCollisionNormal)
 {
 	const float percent = 0.1f;
 	const float slop = 0.01f;

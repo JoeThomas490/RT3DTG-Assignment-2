@@ -34,8 +34,6 @@ private:
 
 	float m_fSpeed;
 
-	bool m_bIsVisible;
-
 	XMMATRIX m_mWorldMatrix;
 
 public:
