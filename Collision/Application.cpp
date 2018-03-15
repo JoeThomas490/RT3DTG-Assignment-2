@@ -33,6 +33,7 @@ bool Application::HandleStart()
 
 	m_pPhysicsWorld = new PhysicsWorld(m_pHeightMap);
 
+
 	/*for (int i = 0; i < MAX_SPHERES; i++)
 	{
 		m_sphereArray[i].SetMesh(m_pSphereMesh);
@@ -104,6 +105,31 @@ void Application::HandleUpdate()
 	HandleCameraInput();
 	HandleDebugInput();
 	HandleSphereInput();
+
+	static bool dbH = false;
+	static bool toggleHole = false;
+	if (IsKeyPressed('H'))
+	{
+		if (dbH == false)
+		{
+			dbH = true;
+
+			toggleHole = !toggleHole;
+
+			if (toggleHole)
+			{
+				m_pHeightMap->DisableBelowLevel(3.0f);
+			}
+			else
+			{
+				m_pHeightMap->EnableAll();
+			}
+		}
+	}
+	else
+	{
+		dbH = false;
+	}
 
 	m_pPhysicsWorld->UpdateWorld();
 
@@ -315,6 +341,15 @@ void Application::HandleSphereInput()
 			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
 
 			dbR = true;
+
+			for (int i = 0; i < m_pSphereArray.size(); i++)
+			{
+				Sphere* s = m_pSphereArray[i];
+				if (s->GetActive())
+				{
+					s->SetPosition(GetRandomPosition());
+				}
+			}
 		}
 	}
 	else
@@ -484,15 +519,16 @@ void Application::AddSphere()
 
 void Application::RemoveSphere()
 {
-	/*m_sphereArray[m_iSphereCount].SetActive(false);
-	m_sphereArray[m_iSphereCount].SetPosition(GetRandomPosition());
-	m_iSphereCount--;
+	//m_pSphereArray[m_iSphereCount]->SetActive(false);
+	//delete m_pSphereArray[m_iSphereCount];
+	//m_pSphereArray[m_iSphereCount] = nullptr;
+	//m_iSphereCount--;
 
-	if (m_iSphereCount < 0)
-	{
-		m_iSphereCount = 0;
-	}*/
-	
+	//if (m_iSphereCount < 0)
+	//{
+	//	m_iSphereCount = 0;
+	//}
+	//
 }
 
 XMVECTOR Application::GetRandomPosition()

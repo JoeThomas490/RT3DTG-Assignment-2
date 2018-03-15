@@ -2,8 +2,6 @@
 #include "HeightMap.h"
 
 
-
-
 PhysicsWorld::PhysicsWorld()
 {
 	m_pHeightMap = nullptr;
@@ -136,7 +134,7 @@ void PhysicsWorld::GeneratePairs()
 
 void PhysicsWorld::PositionalCorrection(PhysicsDynamicCollision * collisionPair)
 {
-	const float percent = 0.01f;
+	const float percent = 0.001f;
 	const float slop = 0.001f;
 
 	XMVECTOR correction = max(collisionPair->penetrationDepth - slop, 0.0f) * percent * collisionPair->collisionNormal;
