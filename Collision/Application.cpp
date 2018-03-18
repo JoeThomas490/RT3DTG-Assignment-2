@@ -11,11 +11,13 @@ const int CAMERA_MAX = 2;
 
 const int DEBUG_FRAME_COUNT = 30;
 
-const int MAX_SPHERES = 25;
+const int MAX_HEIGHTMAPS = 3;
 
 //Sphere m_sphereArray[MAX_SPHERES];
 
 std::vector<Sphere*> m_pSphereArray;
+
+HeightMap** m_heightMapArray;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -43,15 +45,25 @@ bool Application::HandleStart()
 		m_sphereArray[i].SetActive(false);
 	}
 
-	
-
 	m_sphereArray[0].SetActive(true);
 	m_sphereArray[0].SetPosition(GetRandomPosition());*/
 
-	m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
-	m_pPhysicsWorld->AddBody(m_pSphereArray[0]);
+	for (int i = 0; i < MAX_OBJECTS; i++)
+	{
+		m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
+		m_pSphereArray[i]->SetPosition(GetRandomPosition());
+		m_pSphereArray[i]->SetActive(true);
 
-	m_iSphereCount = 0;
+		m_pPhysicsWorld->AddBody(m_pSphereArray[i]);
+	}
+
+	//m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
+	//m_pPhysicsWorld->AddBody(m_pSphereArray[0]);
+
+	//m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
+	//m_pPhysicsWorld->AddBody(m_pSphereArray[1]);
+
+	m_iSphereCount = MAX_OBJECTS;
 
 	m_bDebugMode = false;
 
@@ -504,7 +516,7 @@ void Application::HandleSphereInput()
 void Application::AddSphere()
 {
 	m_iSphereCount++;
-	if (m_iSphereCount < MAX_SPHERES)
+	if (m_iSphereCount < MAX_OBJECTS)
 	{
 		m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
 		m_pSphereArray[m_iSphereCount]->SetPosition(GetRandomPosition());
@@ -512,7 +524,7 @@ void Application::AddSphere()
 	}
 	else
 	{
-		m_iSphereCount = MAX_SPHERES - 1;
+		m_iSphereCount = MAX_OBJECTS - 1;
 	}
 
 }

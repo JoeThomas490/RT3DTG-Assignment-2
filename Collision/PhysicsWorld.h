@@ -46,6 +46,53 @@ XMALIGN struct PhysicsDynamicCollision
 	XMDELETE;
 };
 
+typedef float Point[3];
+
+struct AABB
+{
+	Point minPoint;
+	Point maxPoint;
+
+	DynamicBody* body;
+
+	AABB(XMFLOAT3 mMin, XMFLOAT3 mMax, DynamicBody* mBody)
+	{
+		minPoint[0] = mMin.x;
+		minPoint[1] = mMin.y;
+		minPoint[2] = mMin.z;
+
+		maxPoint[0] = mMax.x;
+		maxPoint[1] = mMax.y;
+		maxPoint[2] = mMax.z;
+
+		body = mBody;
+	}
+
+	AABB(XMVECTOR centrePos, float radius, DynamicBody* mBody)
+	{
+		minPoint[0] = XMVectorGetX(centrePos) - radius;
+		minPoint[1] = XMVectorGetY(centrePos) - radius;
+		minPoint[2] = XMVectorGetZ(centrePos) - radius;
+
+		maxPoint[0] = XMVectorGetX(centrePos) + radius;
+		maxPoint[1] = XMVectorGetY(centrePos) + radius;
+		maxPoint[2] = XMVectorGetZ(centrePos) + radius;
+
+		body = mBody;
+	}
+
+	void UpdatePosition(XMVECTOR centrePos, float radius)
+	{
+		minPoint[0] = XMVectorGetX(centrePos) - radius;
+		minPoint[1] = XMVectorGetY(centrePos) - radius;
+		minPoint[2] = XMVectorGetZ(centrePos) - radius;
+
+		maxPoint[0] = XMVectorGetX(centrePos) + radius;
+		maxPoint[1] = XMVectorGetY(centrePos) + radius;
+		maxPoint[2] = XMVectorGetZ(centrePos) + radius;
+	}
+};
+
 
 //REFERENCE NOTE : FROM GAMEDEVTUTS.COM
 struct BodyPair
@@ -77,6 +124,11 @@ private:
 
 	bool CircleVsCircle(PhysicsDynamicCollision* collisionPair);
 
+	int AABBvsAABB(AABB* a, AABB* b);
+
+	void UpdateAABBs();
+	void SortAndSweepAABBArray();
+
 private:
 
 	std::vector<DynamicBody*> m_dynamicBodyList;
@@ -88,7 +140,12 @@ private:
 
 	HeightMap* m_pHeightMap;
 
-	const float GRAVITY = -8.0f;
+	int m_sortingAxis = 2;
+
+	int m_AABBArrayIndx = 0;
+
+	DynamicBody *m_dynamicBodyArray[MAX_OBJECTS];
+	AABB *m_AABBArray[MAX_OBJECTS];
 };
 
 #endif

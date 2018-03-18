@@ -5,6 +5,11 @@
 PhysicsWorld::PhysicsWorld()
 {
 	m_pHeightMap = nullptr;
+
+	for (int i = 0; i < MAX_OBJECTS; i++)
+	{
+		m_AABBArray[i] = nullptr;
+	}
 }
 
 PhysicsWorld::PhysicsWorld(HeightMap * mHeightMap)
@@ -16,11 +21,24 @@ PhysicsWorld::PhysicsWorld(HeightMap * mHeightMap)
 PhysicsWorld::~PhysicsWorld()
 {
 	m_pHeightMap = nullptr;
+
+
+	for (int i = 0; i < MAX_OBJECTS; i++)
+	{
+		if (m_AABBArray[i] != nullptr)
+		{
+			//delete m_AABBArray[i];
+		}
+	}
 }
 
 void PhysicsWorld::AddBody(DynamicBody * body)
 {
 	m_dynamicBodyList.push_back(body);
+
+	m_AABBArray[m_AABBArrayIndx] = new AABB(body->GetPosition(), body->GetRadius(), body);
+	m_AABBArrayIndx++;
+
 }
 
 void PhysicsWorld::RemoveBody(DynamicBody* mBody)
@@ -47,6 +65,11 @@ void PhysicsWorld::UpdateWorld()
 			//Apply gravity
 			body->ApplyForce(XMVectorSet(0, GRAVITY, 0, 0));
 			body->IntegratePosition();
+
+			if (XMVectorGetY(body->GetPosition()) < -10.0f)
+			{
+				body->SetActive(false);
+			}
 		}
 	}
 
@@ -88,7 +111,19 @@ void PhysicsWorld::HandleStaticCollision()
 
 void PhysicsWorld::HandleDynamicCollision()
 {
-	GeneratePairs();
+	SortAndSweepAABBArray();
+
+	for (auto collision : m_dynamicCollisionList)
+	{
+		collision.bodyA->ResolveCollision(collision.collisionNormal);
+		collision.bodyB->ResolveCollision(collision.collisionNormal);
+	}
+
+	for (auto collision : m_dynamicCollisionList)
+	{
+		PositionalCorrection(&collision);
+	}
+	//GeneratePairs();
 }
 
 void PhysicsWorld::GeneratePairs()
@@ -124,18 +159,14 @@ void PhysicsWorld::GeneratePairs()
 
 	for (auto collision : m_dynamicCollisionList)
 	{
-		//std::sort(m_dynamicCollisionList.begin(), m_dynamicCollisionList.end());
-		//m_dynamicCollisionList.erase(std::unique(m_dynamicCollisionList.begin(), m_dynamicCollisionList.end()), m_dynamicCollisionList.end());
 		PositionalCorrection(&collision);
-		/*collision.bodyA->PositionalCorrectionHeightmap(collision.penetrationDepth, collision.collisionNormal);
-		collision.bodyB->PositionalCorrectionHeightmap(collision.penetrationDepth, collision.collisionNormal);*/
 	}
 }
 
 void PhysicsWorld::PositionalCorrection(PhysicsDynamicCollision * collisionPair)
 {
-	const float percent = 0.001f;
-	const float slop = 0.001f;
+	const float percent = 0.003f;
+	const float slop = 0.00002f;
 
 	XMVECTOR correction = max(collisionPair->penetrationDepth - slop, 0.0f) * percent * collisionPair->collisionNormal;
 	collisionPair->bodyA->SetPosition(collisionPair->bodyA->GetPosition() - correction);
@@ -144,6 +175,10 @@ void PhysicsWorld::PositionalCorrection(PhysicsDynamicCollision * collisionPair)
 
 bool PhysicsWorld::CircleVsCircle(PhysicsDynamicCollision * collisionPair)
 {
+	//static int functionCallCount = 0;
+	//functionCallCount++;
+	//dprintf("Function calls to CircleVSCircle : %i	\n", functionCallCount);
+
 	DynamicBody* bodyA = collisionPair->bodyA;
 	DynamicBody* bodyB = collisionPair->bodyB;
 
@@ -174,4 +209,99 @@ bool PhysicsWorld::CircleVsCircle(PhysicsDynamicCollision * collisionPair)
 		collisionPair->collisionNormal = XMVectorSet(1, 0, 0, 0);
 		return true;
 	}
+}
+
+int PhysicsWorld::AABBvsAABB(AABB * a, AABB * b)
+{
+	if (a->maxPoint[0] < b->minPoint[0] || a->minPoint[0] > b->maxPoint[0]) return 0;
+	if (a->maxPoint[1] < b->minPoint[1] || a->minPoint[1] > b->maxPoint[1]) return 0;
+	if (a->maxPoint[2] < b->minPoint[2] || a->minPoint[2] > b->maxPoint[2]) return 0;
+	return 1;
+}
+
+void PhysicsWorld::UpdateAABBs()
+{
+	for (int i = 0; i < MAX_OBJECTS; i++)
+	{
+		//if (i < m_AABBArrayIndx)
+		{
+			m_AABBArray[i]->UpdatePosition(m_AABBArray[i]->body->GetPosition(), (m_AABBArray[i]->body->GetRadius()));
+		}
+	}
+}
+
+
+void PhysicsWorld::SortAndSweepAABBArray()
+{
+	UpdateAABBs();
+
+	dprintf("Sorting Axis: %i \n", m_sortingAxis);
+
+	m_dynamicCollisionList.clear();
+
+	std::sort(std::begin(m_AABBArray), std::end(m_AABBArray), [this](const void* a, const void* b) -> int
+	{
+		float minA = ((AABB *)a)->minPoint[m_sortingAxis];
+		float minB = ((AABB *)b)->minPoint[m_sortingAxis];
+
+		return minA > minB;
+	});
+
+	float s[3] = { 0.0f, 0.0f, 0.0f }, s2[3] = { 0.0f, 0.0f, 0.0f }, v[3];
+
+	for (int i = 0; i < MAX_OBJECTS; i++)
+	{
+		//Determine the centre point of the AABB
+		Point p = { 0.5f * (m_AABBArray[i]->minPoint[0] + m_AABBArray[i]->maxPoint[0]), 0.5f * ( m_AABBArray[i]->minPoint[1] + m_AABBArray[i]->maxPoint[1]),  0.5f * (m_AABBArray[i]->minPoint[2] + m_AABBArray[i]->maxPoint[2]) };
+
+		//Update sum and sum2 for computing variance
+		for (int c = 0; c < 3; c++)
+		{
+			s[c] += p[c];
+			s2[c] += p[c] * p[c];
+		}
+
+		//Test collisions against all possible overlapping AABBs following current one
+		for (int j = 0; j < MAX_OBJECTS; j++)
+		{
+			if (m_AABBArray[j]->body == m_AABBArray[i]->body)
+			{
+				continue;
+			}
+			if (m_AABBArray[j]->minPoint[m_sortingAxis] > m_AABBArray[i]->maxPoint[m_sortingAxis])
+			{
+				continue;
+			}
+			//If AABBS overlap 
+			if (AABBvsAABB(m_AABBArray[i], m_AABBArray[j]))
+			{
+				PhysicsDynamicCollision collisionPair(m_AABBArray[i]->body, m_AABBArray[j]->body);
+
+				//Do collision test here
+				if (CircleVsCircle(&collisionPair))
+				{
+					//Add to list to resolve
+					m_dynamicCollisionList.push_back(collisionPair);
+				}
+			}
+		}
+
+		//Calculate variance
+		for (int c = 0; c < 3; c++)
+		{
+			v[c] = s2[c] - s[c] * s[c] / MAX_OBJECTS;
+		}
+
+		//Update axis to text next
+		m_sortingAxis = 0;
+		if (v[1] > v[0])
+		{
+			m_sortingAxis = 1;
+		}
+		if (v[2] > v[m_sortingAxis])
+		{
+			m_sortingAxis = 2;
+		}
+	}
+
 }

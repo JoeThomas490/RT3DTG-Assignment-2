@@ -30,7 +30,7 @@ void DynamicBody::IntegratePosition()
 {
 	float dTime = Application::s_pApp->m_fDTime;
 
-	dprintf("FORCE: %f , %f , %f \n", XMVectorGetX(m_vForce), XMVectorGetY(m_vForce), XMVectorGetZ(m_vForce));
+	//dprintf("FORCE: %f , %f , %f \n", XMVectorGetX(m_vForce), XMVectorGetY(m_vForce), XMVectorGetZ(m_vForce));
 
 	//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
 	//NUMERICAL INTEGRATION, SPRING ENERGY
@@ -97,21 +97,16 @@ void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionNormal)
 
 	XMVECTOR velAlongNormal = XMVector3Dot(relativeVelocity, mCollisionNormal);
 
-	//NOTE: 
-	//This seems to break all collision, hmm..
 	if (XMVectorGetX(velAlongNormal) < 0)
 	{
 		return;
 	}
 
-	float e = 0.2f;
+	float e = 0.6f;
 
 	float j = -(1 + e) * XMVectorGetX(velAlongNormal);
 
 	XMVECTOR impulse = j * mCollisionNormal;
-
-	//NOTE:
-	//This was m_vVelocity so could cause issues?
 	m_vVelocity -= impulse;
 }
 

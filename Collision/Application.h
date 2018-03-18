@@ -10,6 +10,7 @@
 #include <d3d11.h>
 
 #include "Macros.h"
+#include "Constants.h"
 
 #include "CommonApp.h"
 #include "CommonMesh.h"

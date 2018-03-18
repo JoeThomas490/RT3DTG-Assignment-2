@@ -100,6 +100,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="DynamicBody.h" />
     <ClInclude Include="HeightMap.h" />
+    <ClInclude Include="Include\Constants.h" />
     <ClInclude Include="Include\Macros.h" />
     <ClInclude Include="Include\Sphere.h" />
     <ClInclude Include="PhysicsWorld.h" />
