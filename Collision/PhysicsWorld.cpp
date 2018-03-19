@@ -228,7 +228,7 @@ void PhysicsWorld::UpdateAABBs()
 {
 	for (int i = 0; i < MAX_OBJECTS; i++)
 	{
-		//if (i < m_AABBArrayIndx)
+		if (m_AABBArray[i]->body->GetActive())
 		{
 			m_AABBArray[i]->UpdatePosition(m_AABBArray[i]->body->GetPosition(), (m_AABBArray[i]->body->GetRadius()));
 		}
@@ -268,6 +268,10 @@ void PhysicsWorld::SortAndSweepAABBArray()
 		for (int j = 0; j < MAX_OBJECTS; j++)
 		{
 			if (m_AABBArray[j]->body == m_AABBArray[i]->body)
+			{
+				continue;
+			}
+			if (!m_AABBArray[j]->body->GetActive() || !m_AABBArray[i]->body->GetActive())
 			{
 				continue;
 			}

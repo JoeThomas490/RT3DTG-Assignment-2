@@ -13,8 +13,6 @@ const int DEBUG_FRAME_COUNT = 30;
 
 const int MAX_HEIGHTMAPS = 3;
 
-//Sphere m_sphereArray[MAX_SPHERES];
-
 std::vector<Sphere*> m_pSphereArray;
 
 HeightMap** m_heightMapArray;
@@ -35,35 +33,18 @@ bool Application::HandleStart()
 
 	m_pPhysicsWorld = new PhysicsWorld(m_pHeightMap);
 
-
-	/*for (int i = 0; i < MAX_SPHERES; i++)
-	{
-		m_sphereArray[i].SetMesh(m_pSphereMesh);
-		m_sphereArray[i].SetRadius(1.0f);
-
-		m_pPhysicsWorld->AddBody(&m_sphereArray[i]);
-		m_sphereArray[i].SetActive(false);
-	}
-
-	m_sphereArray[0].SetActive(true);
-	m_sphereArray[0].SetPosition(GetRandomPosition());*/
-
 	for (int i = 0; i < MAX_OBJECTS; i++)
 	{
 		m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
 		m_pSphereArray[i]->SetPosition(GetRandomPosition());
-		m_pSphereArray[i]->SetActive(true);
-
+		m_pSphereArray[i]->SetActive(false);
 		m_pPhysicsWorld->AddBody(m_pSphereArray[i]);
 	}
 
-	//m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
-	//m_pPhysicsWorld->AddBody(m_pSphereArray[0]);
+	m_pSphereArray[0]->SetActive(true);
+	m_pSphereArray[0]->SetPosition(GetRandomPosition());
 
-	//m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
-	//m_pPhysicsWorld->AddBody(m_pSphereArray[1]);
-
-	m_iSphereCount = MAX_OBJECTS;
+	m_iCurrentSphereIndx = 0;
 
 	m_bDebugMode = false;
 
@@ -322,7 +303,7 @@ void Application::HandleSphereInput()
 
 	static bool dbDown = false;
 
-	if (this->IsKeyPressed(38))
+	if (this->IsKeyPressed(40))
 	{
 		if (dbDown == false)
 		{
@@ -515,32 +496,24 @@ void Application::HandleSphereInput()
 
 void Application::AddSphere()
 {
-	m_iSphereCount++;
-	if (m_iSphereCount < MAX_OBJECTS)
+	if (m_iCurrentSphereIndx < MAX_OBJECTS)
 	{
-		m_pSphereArray.push_back(new Sphere(m_pSphereMesh, 1.0f));
-		m_pSphereArray[m_iSphereCount]->SetPosition(GetRandomPosition());
-		m_pPhysicsWorld->AddBody(m_pSphereArray[m_iSphereCount]);
-	}
-	else
-	{
-		m_iSphereCount = MAX_OBJECTS - 1;
+		m_iCurrentSphereIndx++;
+		dprintf("Current sphere indx  : %i \n", m_iCurrentSphereIndx);
+		m_pSphereArray[m_iCurrentSphereIndx]->SetActive(true);
+		m_pSphereArray[m_iCurrentSphereIndx]->SetPosition(GetRandomPosition());
+		m_pSphereArray[m_iCurrentSphereIndx]->SetVelocity(XMVectorSet(0,0,0,0));
 	}
 
 }
 
 void Application::RemoveSphere()
 {
-	//m_pSphereArray[m_iSphereCount]->SetActive(false);
-	//delete m_pSphereArray[m_iSphereCount];
-	//m_pSphereArray[m_iSphereCount] = nullptr;
-	//m_iSphereCount--;
-
-	//if (m_iSphereCount < 0)
-	//{
-	//	m_iSphereCount = 0;
-	//}
-	//
+	if (m_iCurrentSphereIndx != 0)
+	{
+		m_pSphereArray[m_iCurrentSphereIndx]->SetActive(false);
+		m_iCurrentSphereIndx--;
+	}
 }
 
 XMVECTOR Application::GetRandomPosition()

@@ -75,7 +75,7 @@ private:
 
 	PhysicsWorld* m_pPhysicsWorld;
 
-	int m_iSphereCount = 0;
+	int m_iCurrentSphereIndx = 0;
 
 
 	XMFLOAT3 mSpherePos;
