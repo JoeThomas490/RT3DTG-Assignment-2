@@ -113,7 +113,7 @@ void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionNormal)
 //REFERENCE NOTE : FROM GAMEDEVTUTS.COM
 void DynamicBody::PositionalCorrectionHeightmap(float mPenetration, const XMVECTOR& mCollisionNormal)
 {
-	const float percent = 0.1f;
+	const float percent = 0.2f;
 	const float slop = 0.01f;
 
 	XMVECTOR correction = max(mPenetration - slop, 0.0f) * percent * mCollisionNormal;

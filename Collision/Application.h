@@ -36,6 +36,9 @@ public CommonApp
 {
 public:
 	static Application* s_pApp;
+
+	int m_frameCount;
+
 protected:
 	bool HandleStart();
 	void HandleStop();
@@ -55,7 +58,6 @@ private:
 
 private:
 
-	float m_frameCount;
 
 	bool m_reload;
 

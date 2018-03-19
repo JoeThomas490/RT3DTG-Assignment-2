@@ -58,6 +58,30 @@ void PhysicsWorld::UpdateWorld()
 	HandleStaticCollision();
 	HandleDynamicCollision();
 
+
+	for (auto collision : m_staticCollisionList)
+	{
+		collision.body->ResolveCollision(collision.collisionNormal);
+	}
+
+	for (auto collision : m_dynamicCollisionList)
+	{
+		collision.bodyA->ResolveCollision(collision.collisionNormal);
+		collision.bodyB->ResolveCollision(collision.collisionNormal);
+	}
+
+	for (auto collision : m_staticCollisionList)
+	{
+		collision.body->PositionalCorrectionHeightmap(collision.penetrationDepth, collision.collisionNormal);
+	}
+
+	for (auto collision : m_dynamicCollisionList)
+	{
+		PositionalCorrection(&collision);
+	}
+
+
+
 	for (auto body : m_dynamicBodyList)
 	{
 		if (body->GetActive())
@@ -74,6 +98,7 @@ void PhysicsWorld::UpdateWorld()
 	}
 
 	m_staticCollisionList.clear();
+	m_dynamicCollisionList.clear();
 }
 
 void PhysicsWorld::HandleStaticCollision()
@@ -87,23 +112,10 @@ void PhysicsWorld::HandleStaticCollision()
 		{
 			if (body->GetActive())
 			{
-
 				std::vector<PhysicsStaticCollision>	bodyCollisionList = m_pHeightMap->SphereHeightmap(body);
 				m_staticCollisionList.insert(m_staticCollisionList.end(), bodyCollisionList.begin(), bodyCollisionList.end());
 			}
 		}
-
-		for (auto collision : m_staticCollisionList)
-		{
-			collision.body->ResolveCollision(collision.collisionNormal);
-		}
-
-		for (auto collision : m_staticCollisionList)
-		{
-			collision.body->PositionalCorrectionHeightmap(collision.penetrationDepth, collision.collisionNormal);
-		}
-
-		m_staticCollisionList.clear();
 
 		m_pHeightMap->RebuildVertexData();
 	}
@@ -112,25 +124,11 @@ void PhysicsWorld::HandleStaticCollision()
 void PhysicsWorld::HandleDynamicCollision()
 {
 	SortAndSweepAABBArray();
-
-	for (auto collision : m_dynamicCollisionList)
-	{
-		collision.bodyA->ResolveCollision(collision.collisionNormal);
-		collision.bodyB->ResolveCollision(collision.collisionNormal);
-	}
-
-	for (auto collision : m_dynamicCollisionList)
-	{
-		PositionalCorrection(&collision);
-	}
 	//GeneratePairs();
 }
 
 void PhysicsWorld::GeneratePairs()
 {
-
-	m_dynamicCollisionList.clear();
-
 	for (auto bodyA : m_dynamicBodyList)
 	{
 		for (auto bodyB : m_dynamicBodyList)
@@ -165,8 +163,8 @@ void PhysicsWorld::GeneratePairs()
 
 void PhysicsWorld::PositionalCorrection(PhysicsDynamicCollision * collisionPair)
 {
-	const float percent = 0.003f;
-	const float slop = 0.00002f;
+	const float percent = 0.0015f;
+	const float slop = 0.001f;
 
 	XMVECTOR correction = max(collisionPair->penetrationDepth - slop, 0.0f) * percent * collisionPair->collisionNormal;
 	collisionPair->bodyA->SetPosition(collisionPair->bodyA->GetPosition() - correction);
@@ -175,8 +173,15 @@ void PhysicsWorld::PositionalCorrection(PhysicsDynamicCollision * collisionPair)
 
 bool PhysicsWorld::CircleVsCircle(PhysicsDynamicCollision * collisionPair)
 {
+	//Frame count test for CircleVsCircle
+	//-------------------------------------
 	//static int functionCallCount = 0;
 	//functionCallCount++;
+	//if (functionCallCount > 50000)
+	//{
+	//	int frameCount = Application::s_pApp->m_frameCount;
+	//}
+	//-------------------------------------
 	//dprintf("Function calls to CircleVSCircle : %i	\n", functionCallCount);
 
 	DynamicBody* bodyA = collisionPair->bodyA;
@@ -234,8 +239,6 @@ void PhysicsWorld::UpdateAABBs()
 void PhysicsWorld::SortAndSweepAABBArray()
 {
 	UpdateAABBs();
-
-	dprintf("Sorting Axis: %i \n", m_sortingAxis);
 
 	m_dynamicCollisionList.clear();
 

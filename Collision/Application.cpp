@@ -25,7 +25,7 @@ HeightMap** m_heightMapArray;
 bool Application::HandleStart()
 {
 	s_pApp = this;
-	m_frameCount = 0.0f;
+	m_frameCount = 0;
 
 	m_pSphereMesh = CommonMesh::NewSphereMesh(this, 1.0f, 16, 16);
 
