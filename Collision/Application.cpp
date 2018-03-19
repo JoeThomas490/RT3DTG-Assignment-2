@@ -124,10 +124,11 @@ void Application::HandleUpdate()
 		dbH = false;
 	}
 
-	m_pPhysicsWorld->UpdateWorld();
+	
 
 	if (!m_bDebugMode)
 	{
+		m_pPhysicsWorld->UpdateWorld();
 		for (auto sphere : m_pSphereArray)
 		{
 			if (sphere->GetActive())
@@ -140,6 +141,7 @@ void Application::HandleUpdate()
 	{
 		if ((int)m_frameCount % DEBUG_FRAME_COUNT == 0)
 		{
+			m_pPhysicsWorld->UpdateWorld();
 			for (auto sphere : m_pSphereArray)
 			{
 				if (sphere->GetActive())
@@ -341,6 +343,7 @@ void Application::HandleSphereInput()
 				if (s->GetActive())
 				{
 					s->SetPosition(GetRandomPosition());
+					s->SetVelocity(XMVectorSet(0, 0, 0, 0));
 				}
 			}
 		}
@@ -372,7 +375,10 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newPos;
 			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
 
-			newPos.y += 20.0f;
+			newPos.y += 10.0f;
+
+			m_pSphereArray[0]->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
+			m_pSphereArray[0]->SetVelocity(XMVectorSet(0, 0, 0, 0));
 
 			dbU = true;
 		}
@@ -401,7 +407,10 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newPos;
 			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
 
-			newPos.y += 20.0f;
+			newPos.y += 10.0f;
+
+			m_pSphereArray[0]->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
+			m_pSphereArray[0]->SetVelocity(XMVectorSet(0, 0, 0, 0));
 
 			dbI = true;
 		}
@@ -430,7 +439,10 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newPos;
 			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
 
-			newPos.y += 20.0f;
+			newPos.y += 10.0f;
+
+			m_pSphereArray[0]->SetPosition(XMVectorSet(newPos.x, newPos.y, newPos.z, 1));
+			m_pSphereArray[0]->SetVelocity(XMVectorSet(0, 0, 0, 0));
 
 		}
 	}
