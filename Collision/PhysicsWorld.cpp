@@ -32,6 +32,11 @@ PhysicsWorld::~PhysicsWorld()
 	}
 }
 
+void PhysicsWorld::SetHeightMapPtr(HeightMap * pHeightMap)
+{
+	m_pHeightMap = pHeightMap;
+}
+
 void PhysicsWorld::AddBody(DynamicBody * body)
 {
 	m_dynamicBodyList.push_back(body);

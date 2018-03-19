@@ -109,6 +109,8 @@ public:
 
 	~PhysicsWorld();
 
+	void SetHeightMapPtr(HeightMap* pHeightMap);
+
 	void AddBody(DynamicBody* body);
 	void RemoveBody(DynamicBody* body);
 

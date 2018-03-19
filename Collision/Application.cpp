@@ -11,8 +11,6 @@ const int CAMERA_MAX = 2;
 
 const int DEBUG_FRAME_COUNT = 30;
 
-const int MAX_HEIGHTMAPS = 3;
-
 std::vector<Sphere*> m_pSphereArray;
 
 HeightMap** m_heightMapArray;
@@ -27,11 +25,16 @@ bool Application::HandleStart()
 
 	m_pSphereMesh = CommonMesh::NewSphereMesh(this, 1.0f, 16, 16);
 
-
 	m_bWireframe = true;
-	m_pHeightMap = new HeightMap("Resources/heightmap.bmp", 2.0f, 0.75f);
 
-	m_pPhysicsWorld = new PhysicsWorld(m_pHeightMap);
+	m_heightMapArr[0] = new HeightMap("Resources/heightmap_0.bmp", 2.0f, 0.75f);
+	m_heightMapArr[1] = new HeightMap("Resources/heightmap_1.bmp", 2.0f, 0.75f);
+	m_heightMapArr[2] = new HeightMap("Resources/heightmap_2.bmp", 2.0f, 0.75f);
+	m_heightMapArr[3] = new HeightMap("Resources/heightmap_3.bmp", 2.0f, 0.75f);
+
+	m_pActiveHeightMap = m_heightMapArr[0];
+
+	m_pPhysicsWorld = new PhysicsWorld(m_pActiveHeightMap);
 
 	for (int i = 0; i < MAX_OBJECTS; i++)
 	{
@@ -69,7 +72,12 @@ bool Application::HandleStart()
 
 void Application::HandleStop()
 {
-	delete m_pHeightMap;
+
+	m_pActiveHeightMap = nullptr;
+	delete m_heightMapArr[0];
+	delete m_heightMapArr[1];
+	delete m_heightMapArr[2];
+	delete m_heightMapArr[3];
 
 	if (m_pPhysicsWorld != nullptr)
 	{
@@ -87,7 +95,7 @@ void Application::HandleStop()
 
 void Application::ReloadShaders()
 {
-	if (m_pHeightMap->ReloadShader() == false)
+	if (m_pActiveHeightMap->ReloadShader() == false)
 		this->SetWindowTitle("Reload Failed - see Visual Studio output window. Press F5 to try again.");
 	else
 		this->SetWindowTitle("Collision: Zoom / Rotate Q, A / O, P, Camera C, Drop Sphere R, N and T, Wire W");
@@ -111,11 +119,11 @@ void Application::HandleUpdate()
 
 			if (toggleHole)
 			{
-				m_pHeightMap->DisableBelowLevel(3.0f);
+				m_pActiveHeightMap->DisableBelowLevel(3.0f);
 			}
 			else
 			{
-				m_pHeightMap->EnableAll();
+				m_pActiveHeightMap->EnableAll();
 			}
 		}
 	}
@@ -124,7 +132,30 @@ void Application::HandleUpdate()
 		dbH = false;
 	}
 
-	
+	static bool dbM = false;
+	if (IsKeyPressed('M'))
+	{
+		if (dbM == false)
+		{
+			dbM = true;
+
+			m_iCurrentHeightMapIndx++;
+			if (m_iCurrentHeightMapIndx >= MAX_HEIGHTMAPS)
+			{
+				m_iCurrentHeightMapIndx = 0;
+			}
+
+			m_pActiveHeightMap = m_heightMapArr[m_iCurrentHeightMapIndx];
+
+			m_pPhysicsWorld->SetHeightMapPtr(m_pActiveHeightMap);
+		}
+	}
+	else
+	{
+		dbM = false;
+	}
+
+
 
 	if (!m_bDebugMode)
 	{
@@ -191,7 +222,7 @@ void Application::HandleRender()
 	worldMtx = XMMatrixTranslation(mSpherePos.x, mSpherePos.y, mSpherePos.z);
 
 	SetDepthStencilState(false, true);
-	m_pHeightMap->Draw(m_frameCount);
+	m_pActiveHeightMap->Draw(m_frameCount);
 
 	this->SetWorldMatrix(worldMtx);
 	SetDepthStencilState(true, true);
@@ -326,25 +357,14 @@ void Application::HandleSphereInput()
 	{
 		if (dbR == false)
 		{
-			static int dx = 0;
-			static int dy = 0;
-			XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
-
-			XMFLOAT3 newVel = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -10.025f, 0.0f);
-
-			newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
-
 			dbR = true;
 
-			for (int i = 0; i < m_pSphereArray.size(); i++)
+			for (int i = 0; i <= m_iCurrentSphereIndx; i++)
 			{
 				Sphere* s = m_pSphereArray[i];
-				if (s->GetActive())
-				{
-					s->SetPosition(GetRandomPosition());
-					s->SetVelocity(XMVectorSet(0, 0, 0, 0));
-				}
+				s->SetActive(true);
+				s->SetPosition(GetRandomPosition());
+				s->SetVelocity(XMVectorSet(0, 0, 0, 0));
 			}
 		}
 	}
@@ -362,7 +382,7 @@ void Application::HandleSphereInput()
 		if (dbU == false)
 		{
 			faceCounter++;
-			if (faceCounter > m_pHeightMap->m_iFaceCount)
+			if (faceCounter > m_pActiveHeightMap->m_iFaceCount)
 			{
 				faceCounter = 0;
 			}
@@ -373,7 +393,7 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
 
 			XMFLOAT3 newPos;
-			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
+			newPos = m_pActiveHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
 
 			newPos.y += 10.0f;
 
@@ -396,7 +416,7 @@ void Application::HandleSphereInput()
 			faceCounter--;
 			if (faceCounter < 0)
 			{
-				faceCounter = m_pHeightMap->m_iFaceCount;
+				faceCounter = m_pActiveHeightMap->m_iFaceCount;
 			}
 
 			vertexCounter = 0;
@@ -405,7 +425,7 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
 
 			XMFLOAT3 newPos;
-			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
+			newPos = m_pActiveHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
 
 			newPos.y += 10.0f;
 
@@ -437,7 +457,7 @@ void Application::HandleSphereInput()
 			XMFLOAT3 newAccel = XMFLOAT3(0.0f, -0.05f, 0.0f);
 
 			XMFLOAT3 newPos;
-			newPos = m_pHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
+			newPos = m_pActiveHeightMap->GetPositionOnFace(faceCounter, vertexCounter);
 
 			newPos.y += 10.0f;
 
@@ -450,60 +470,6 @@ void Application::HandleSphereInput()
 	{
 		dbD = false;
 	}
-
-	//static bool dbT = false;
-	//if (this->IsKeyPressed('T'))
-	//{
-	//	if (dbT == false)
-	//	{
-	//		static int dx = 0;
-	//		static int dy = 0;
-	//		mSpherePos = XMFLOAT3(mSpherePos.x, 20.0f, mSpherePos.z);
-	//		mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-	//		mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
-	//		mSphereCollided = false;
-	//		dbT = true;
-	//	}
-	//}
-	//else
-	//{
-	//	dbT = false;
-	//}
-
-	//static int dx = 0;
-	//static int dy = 0;
-	//static int seg = 0;
-	//static bool dbN = false;
-
-	//if (this->IsKeyPressed('N'))
-	//{
-	//	if (dbN == false)
-	//	{
-	//		if (++seg == 2)
-	//		{
-	//			seg = 0;
-	//			if (++dx == 15)
-	//			{
-	//				if (++dy == 15) dy = 0;
-	//				dx = 0;
-	//			}
-	//		}
-
-	//		if (seg == 0)
-	//			mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) - 0.5f, 20.0f, ((dy - 7.0f) * 2) - 0.5f);
-	//		else
-	//			mSpherePos = XMFLOAT3(((dx - 7.0f) * 2) + 0.5f, 20.0f, ((dy - 7.0f) * 2) + 0.5f);
-
-	//		mSphereVel = XMFLOAT3(0.0f, 0.2f, 0.0f);
-	//		mGravityAcc = XMFLOAT3(0.0f, -0.05f, 0.0f);
-	//		mSphereCollided = false;
-	//		dbN = true;
-	//	}
-	//}
-	//else
-	//{
-	//	dbN = false;
-	//}
 }
 
 void Application::AddSphere()
@@ -514,7 +480,7 @@ void Application::AddSphere()
 		dprintf("Current sphere indx  : %i \n", m_iCurrentSphereIndx);
 		m_pSphereArray[m_iCurrentSphereIndx]->SetActive(true);
 		m_pSphereArray[m_iCurrentSphereIndx]->SetPosition(GetRandomPosition());
-		m_pSphereArray[m_iCurrentSphereIndx]->SetVelocity(XMVectorSet(0,0,0,0));
+		m_pSphereArray[m_iCurrentSphereIndx]->SetVelocity(XMVectorSet(0, 0, 0, 0));
 	}
 
 }
@@ -530,7 +496,7 @@ void Application::RemoveSphere()
 
 XMVECTOR Application::GetRandomPosition()
 {
-	XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 14 - 7.0f) - 0.5), 20.0f, (float)((rand() % 14 - 7.0f) - 0.5));
+	XMFLOAT3 newPos = XMFLOAT3((float)((rand() % 24 - 12.0f) - 0.5), 22.0f, (float)((rand() % 24 - 12.0f) - 0.5));
 	return XMVectorSet(newPos.x, newPos.y, newPos.z, 1);
 }
 

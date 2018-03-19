@@ -69,14 +69,16 @@ private:
 
 	int m_cameraState;
 
-	HeightMap* m_pHeightMap;
-
 	CommonMesh *m_pSphereMesh;
 
 	PhysicsWorld* m_pPhysicsWorld;
 
 	int m_iCurrentSphereIndx = 0;
 
+	HeightMap *m_heightMapArr[MAX_HEIGHTMAPS];
+	HeightMap* m_pActiveHeightMap;
+
+	int m_iCurrentHeightMapIndx = 0;
 
 	XMFLOAT3 mSpherePos;
 	XMFLOAT3 mSphereVel;
