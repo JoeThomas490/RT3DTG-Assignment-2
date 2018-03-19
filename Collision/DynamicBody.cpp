@@ -30,20 +30,79 @@ void DynamicBody::IntegratePosition()
 {
 	float dTime = Application::s_pApp->m_fDTime;
 
-	//dprintf("FORCE: %f , %f , %f \n", XMVectorGetX(m_vForce), XMVectorGetY(m_vForce), XMVectorGetZ(m_vForce));
-
 	//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
 	//NUMERICAL INTEGRATION, SPRING ENERGY
+
+	//Add all forces onto current velocity (multiplying by dTime to smooth movement over different fps)
 	m_vVelocity += (m_massData.inv_mass * m_vForce) * dTime;
+
+	//Increment position by overall velocity
 	m_vPosition += m_vVelocity * dTime;
 
+	//Reset force after every frame
 	m_vForce = XMVectorSet(0, 0, 0, 0);
 }
 
+
+//Apply a force to the body (Adds force onto m_vForce)
+//Params : XMVECTOR of force to be added
 void DynamicBody::ApplyForce(const XMVECTOR & mForce)
 {
 	m_vForce += mForce;
 }
+
+//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
+
+//Calculate impulse velocity when passed a collision normal
+//Params : XMVECTOR of collision normal (must be normalized)
+void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionNormal)
+{
+	//Calculate negative velocity (opposite movement)
+	XMVECTOR relativeVelocity = -m_vVelocity;
+
+	//Calculate dot product between relative velocity and collision normal
+	XMVECTOR velAlongNormal = XMVector3Dot(relativeVelocity, mCollisionNormal);
+
+	//If the dot product < 0 (i.e object is moving away from normal)
+	//Then return out and don't resolve
+	if (XMVectorGetX(velAlongNormal) < 0)
+	{
+		return;
+	}
+
+	//Coefficent of restitution
+	float e = 0.6f;
+
+	//Calculate amount of impulse
+	float j = -(1 + e) * XMVectorGetX(velAlongNormal);
+
+	//Calculate velocity
+	XMVECTOR impulse = j * mCollisionNormal;
+
+	//Modify velocity by this impulse velocty
+	m_vVelocity -= impulse;
+}
+
+//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
+
+//Calculate position correction when colliding with the heightmap
+//Params : Penetration depth between body and heightmap, XMVECTOR of collision normal
+void DynamicBody::PositionalCorrectionHeightmap(float mPenetration, const XMVECTOR& mCollisionNormal)
+{
+	//Percent to move position (high percent causes more jitter but stops overlap)
+	const float percent = 0.2f;
+	
+	//If penetration is less than slop value then don't correct
+	const float slop = 0.01f;
+
+	//Calulcate positional correction vector
+	XMVECTOR correction = max(mPenetration - slop, 0.0f) * percent * mCollisionNormal;
+
+	//Modify position based on correction calculated
+	m_vPosition += correction;
+}
+
+//*********************** Getters / Setters ************************************
 
 void DynamicBody::SetMesh(CommonMesh * mMesh)
 {
@@ -90,33 +149,5 @@ void DynamicBody::SetActive(bool isActive)
 	m_bIsActive = isActive;
 }
 
-//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
-void DynamicBody::ResolveCollision(const XMVECTOR& mCollisionNormal)
-{
-	XMVECTOR relativeVelocity = -m_vVelocity;
-
-	XMVECTOR velAlongNormal = XMVector3Dot(relativeVelocity, mCollisionNormal);
-
-	if (XMVectorGetX(velAlongNormal) < 0)
-	{
-		return;
-	}
-
-	float e = 0.6f;
-
-	float j = -(1 + e) * XMVectorGetX(velAlongNormal);
-
-	XMVECTOR impulse = j * mCollisionNormal;
-	m_vVelocity -= impulse;
-}
-
-//REFERENCE NOTE : FROM GAMEDEVTUTS.COM
-void DynamicBody::PositionalCorrectionHeightmap(float mPenetration, const XMVECTOR& mCollisionNormal)
-{
-	const float percent = 0.2f;
-	const float slop = 0.01f;
-
-	XMVECTOR correction = max(mPenetration - slop, 0.0f) * percent * mCollisionNormal;
-	m_vPosition += correction;
-}
+//******************************************************************************
 

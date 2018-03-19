@@ -72,7 +72,6 @@ bool Application::HandleStart()
 
 void Application::HandleStop()
 {
-
 	m_pActiveHeightMap = nullptr;
 	delete m_heightMapArr[0];
 	delete m_heightMapArr[1];
