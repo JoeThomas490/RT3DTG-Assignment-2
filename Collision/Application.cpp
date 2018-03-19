@@ -97,7 +97,7 @@ void Application::ReloadShaders()
 	if (m_pActiveHeightMap->ReloadShader() == false)
 		this->SetWindowTitle("Reload Failed - see Visual Studio output window. Press F5 to try again.");
 	else
-		this->SetWindowTitle("Collision: Zoom / Rotate Q, A / O, P, Camera C, Drop Sphere R, N and T, Wire W");
+		this->SetWindowTitle("Collision: Zoom / Rotate Q, A / O, P, Camera C, Drop Sphere R, U, I and D,  Wire W, Change HeightMap M");
 }
 
 void Application::HandleUpdate()
@@ -502,7 +502,6 @@ void Application::AddSphere()
 	if (m_iCurrentSphereIndx < MAX_OBJECTS)
 	{
 		m_iCurrentSphereIndx++;
-		dprintf("Current sphere indx  : %i \n", m_iCurrentSphereIndx);
 		m_pSphereArray[m_iCurrentSphereIndx]->SetActive(true);
 		m_pSphereArray[m_iCurrentSphereIndx]->SetPosition(GetRandomPosition());
 		m_pSphereArray[m_iCurrentSphereIndx]->SetVelocity(XMVectorSet(0, 0, 0, 0));

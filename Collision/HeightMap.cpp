@@ -24,8 +24,6 @@ HeightMap::HeightMap(char* filename, float gridSize, float heightRange)
 
 	}
 
-	//DisableBelowLevel(-50);
-
 	m_HeightMapVtxCount = m_HeightMapFaceCount * 3;
 
 	for (size_t i = 0; i < NUM_TEXTURE_FILES; ++i)

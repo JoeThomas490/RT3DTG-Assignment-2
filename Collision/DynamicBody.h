@@ -9,8 +9,8 @@ class PhysicsWorld;
 
 //**********************************************************************************
 // Struct : MassData
-// Description : Holds the mass and inverse mass for a body. If 0 is passed for the mass
-// the inverse is also set as 0
+// Description : Holds the mass and inverse mass for a body. If 0 is passed for the 
+// mass the inverse is also set as 0
 //**********************************************************************************
 struct MassData
 {
