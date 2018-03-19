@@ -470,6 +470,32 @@ void Application::HandleSphereInput()
 	{
 		dbD = false;
 	}
+
+
+	static bool dbF = false;
+
+	if (IsKeyPressed('F'))
+	{
+		if (dbF == false)
+		{
+			dbF = true;
+
+			if(m_iCurrentSphereIndx == 0)
+			{
+				AddSphere();
+			}
+
+			m_pSphereArray[0]->SetPosition(XMVectorSet(15, 20, 0, 0));
+			m_pSphereArray[0]->SetVelocity(XMVectorSet(0, 0, 0, 0));
+
+			m_pSphereArray[1]->SetPosition(XMVectorSet(-15, 20, 0, 0));
+			m_pSphereArray[1]->SetVelocity(XMVectorSet(0, 0, 0, 0));
+		}
+	}
+	else
+	{
+		dbF = false;
+	}
 }
 
 void Application::AddSphere()
